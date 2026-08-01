@@ -1,0 +1,149 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isParent() {
+      return isAuthenticated() && (request.auth.token.role == 'parent' || request.auth.token.role == 'super_admin');
+    }
+    
+    function isChild() {
+      return isAuthenticated() && request.auth.token.role == 'child';
+    }
+
+    // Default match
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Children & Child Profile
+    match /children/{childId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+    
+    match /child_profile/{childId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+
+    // Child Growth & Milestones
+    match /child_growth/{growthId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+
+    match /child_milestone/{milestoneId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+
+    // Daily Activities & Screen Time
+    match /daily_activity/{activityId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /screen_time/{recordId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Habits & Tasks
+    match /habit_tracker/{habitId} {
+      allow read: if isAuthenticated();
+      allow fontUpdate: if isAuthenticated();
+      allow write: if isParent() || isChild();
+    }
+
+    match /child_task/{taskId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent() || isChild();
+    }
+
+    // Reward System & Goals
+    match /reward_system/{childId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+
+    match /goal_setting/{goalId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Parent Notes (Encrypted/Private Notes restricted to Parents)
+    match /parent_notes/{noteId} {
+      allow read: if isParent();
+      allow write: if isParent();
+    }
+
+    match /parenting_insight/{insightId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+
+    match /achievement_child/{childId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+
+    // Finance & Financial Center Rules
+    match /financial_profile/{profileId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+    match /income/{incomeId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+    match /expense/{expenseId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /budget/{budgetId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+    match /saving_goal/{goalId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /investment/{investmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+    match /bill/{billId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /subscription/{subscriptionId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /asset/{assetId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+    match /debt/{debtId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+    match /financial_report/{reportId} {
+      allow read: if isAuthenticated();
+      allow write: if isParent();
+    }
+    match /financial_insight/{insightId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /shared_wallet/{walletId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /financial_document/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /finance_notification/{notificationId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

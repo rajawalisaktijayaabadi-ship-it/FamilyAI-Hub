@@ -1,0 +1,233 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Family member user profile entity",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["super_admin", "parent", "child", "grandparent", "guest"] },
+        "familyId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "isOnline": { "type": "boolean" }
+      },
+      "required": ["uid", "email", "displayName", "role", "familyId"]
+    },
+    "Family": {
+      "title": "Family",
+      "description": "Family group collection entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "familyName": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "familyName", "ownerUid"]
+    },
+    "Child": {
+      "title": "Child",
+      "description": "Child profile entity",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "familyId": { "type": "string" },
+        "name": { "type": "string" },
+        "birthDate": { "type": "string" },
+        "age": { "type": "number" },
+        "gender": { "type": "string" },
+        "school": { "type": "string" },
+        "grade": { "type": "string" },
+        "bloodType": { "type": "string" }
+      },
+      "required": ["id", "familyId", "name", "age"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Collection storing family app users"
+    },
+    "/families/{familyId}": {
+      "schema": { "$ref": "#/entities/Family" },
+      "description": "Collection storing family units"
+    },
+    "/children/{childId}": {
+      "schema": { "$ref": "#/entities/Child" },
+      "description": "Collection storing children profiles"
+    },
+    "/child_profile/{childId}": {
+      "description": "Extended child profiles collection"
+    },
+    "/child_growth/{growthId}": {
+      "description": "Child physical and development growth records"
+    },
+    "/child_milestone/{milestoneId}": {
+      "description": "Child development milestone tracking"
+    },
+    "/daily_activity/{activityId}": {
+      "description": "Daily logged activities for child"
+    },
+    "/habit_tracker/{habitId}": {
+      "description": "Habits and streak tracking for child"
+    },
+    "/reward_system/{childId}": {
+      "description": "Points, coins, and badges for child"
+    },
+    "/child_task/{taskId}": {
+      "description": "Daily tasks assigned to child"
+    },
+    "/parent_notes/{noteId}": {
+      "description": "Parent personal notes and observation logs"
+    },
+    "/screen_time/{recordId}": {
+      "description": "Screen time monitoring and AI recommendations"
+    },
+    "/parenting_insight/{insightId}": {
+      "description": "AI parenting coaching and insights"
+    },
+    "/goal_setting/{goalId}": {
+      "description": "Child targets and progress tracking"
+    },
+    "/achievement_child/{childId}": {
+      "description": "Child achievement dashboard data"
+    },
+    "/education_profile/{profileId}": {
+      "description": "Child education profile details"
+    },
+    "/subjects/{subjectId}": {
+      "description": "Child school subjects management"
+    },
+    "/homework/{homeworkId}": {
+      "description": "Child homework and assignment tracking"
+    },
+    "/study_plan/{planId}": {
+      "description": "Child study schedule and planner"
+    },
+    "/exam_schedule/{examId}": {
+      "description": "Child exam schedule and countdowns"
+    },
+    "/learning_progress/{progressId}": {
+      "description": "Child subject progress and grades"
+    },
+    "/learning_analytics/{analyticsId}": {
+      "description": "Aggregated education analytics and stats"
+    },
+    "/reading_logs/{logId}": {
+      "description": "Child reading center logs and book progress"
+    },
+    "/quiz/{quizId}": {
+      "description": "AI generated educational quizzes"
+    },
+    "/quiz_result/{resultId}": {
+      "description": "Results of taken quizzes"
+    },
+    "/certificate/{certificateId}": {
+      "description": "Digital certificates and academic awards"
+    },
+    "/achievement_education/{achievementId}": {
+      "description": "Educational milestones and badges"
+    },
+    "/teacher_placeholder/{teacherId}": {
+      "description": "Teacher collaboration and communication notes"
+    },
+    "/education_insight/{insightId}": {
+      "description": "AI learning coach insights and recommendations"
+    },
+    "/skill_development/{skillId}": {
+      "description": "Future skills and non-academic talents tracking"
+    },
+    "/financial_profile/{profileId}": {
+      "description": "Family financial profile and preferences"
+    },
+    "/income/{incomeId}": {
+      "description": "Family income records"
+    },
+    "/expense/{expenseId}": {
+      "description": "Family expense records"
+    },
+    "/budget/{budgetId}": {
+      "description": "Budget planner and allocation tracking"
+    },
+    "/saving_goal/{goalId}": {
+      "description": "Saving targets and emergency fund goals"
+    },
+    "/investment/{investmentId}": {
+      "description": "Investment portfolio tracking"
+    },
+    "/bill/{billId}": {
+      "description": "Recurring bills and payment tracking"
+    },
+    "/subscription/{subscriptionId}": {
+      "description": "Active digital subscriptions"
+    },
+    "/asset/{assetId}": {
+      "description": "Family physical and digital asset inventory"
+    },
+    "/debt/{debtId}": {
+      "description": "Family debts, KPR, and loan management"
+    },
+    "/financial_report/{reportId}": {
+      "description": "Generated financial reports and analytics"
+    },
+    "/financial_insight/{insightId}": {
+      "description": "AI financial advice and budget insights"
+    },
+    "/shared_wallet/{walletId}": {
+      "description": "Family shared wallets and internal balances"
+    },
+    "/financial_document/{docId}": {
+      "description": "Financial documents, invoices, and receipts"
+    },
+    "/finance_notification/{notificationId}": {
+      "description": "Finance reminders and bill alerts"
+    },
+    "/meal_plan/{planId}": {
+      "description": "Family meal plan schedules and daily menus"
+    },
+    "/meal_category/{categoryId}": {
+      "description": "Meal categories (Sarapan, Makan Siang, Healthy, Kids, etc.)"
+    },
+    "/recipe/{recipeId}": {
+      "description": "Family recipes and instructions"
+    },
+    "/recipe_step/{stepId}": {
+      "description": "Recipe step by step cooking guide"
+    },
+    "/ingredient/{ingredientId}": {
+      "description": "Inventory ingredients and stock tracking"
+    },
+    "/nutrition_summary/{summaryId}": {
+      "description": "Daily nutrition metrics, calories and macros"
+    },
+    "/family_preference/{preferenceId}": {
+      "description": "Family member food preferences, allergies, and restrictions"
+    },
+    "/leftover/{leftoverId}": {
+      "description": "Stored food leftovers and usage recommendations"
+    },
+    "/kitchen_asset/{assetId}": {
+      "description": "Kitchen appliances and maintenance schedules"
+    },
+    "/cooking_schedule/{scheduleId}": {
+      "description": "Daily cooking duty assignments"
+    },
+    "/meal_history/{historyId}": {
+      "description": "Historical logged meals and calorie consumption"
+    },
+    "/meal_recommendation/{recommendationId}": {
+      "description": "AI generated meal recommendations from fridge stock"
+    },
+    "/nutrition_insight/{insightId}": {
+      "description": "AI nutrition coaching and diet insights"
+    },
+    "/meal_report/{reportId}": {
+      "description": "Weekly meal reports and food waste statistics"
+    },
+    "/meal_notification/{notificationId}": {
+      "description": "Meal and kitchen reminders"
+    }
+  }
+}

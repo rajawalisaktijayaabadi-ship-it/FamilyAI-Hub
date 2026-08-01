@@ -1,0 +1,6 @@
+{
+  "name": "FamilyAI Hub",
+  "description": "Asisten Digital Keluarga Masa Depan - Hub AI All-in-One untuk Keluarga Modern",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
