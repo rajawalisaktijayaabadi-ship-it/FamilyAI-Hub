@@ -51,9 +51,13 @@ import { MemoriesCenterModule } from './features/memories/MemoriesCenterModule';
 import { AnalyticsView } from './components/views/AnalyticsView';
 import { AdminView } from './components/views/AdminView';
 
+import { LandingPageView } from './components/LandingPageView';
+import { LoginView } from './components/LoginView';
+
 import { ShieldAlert, X, PhoneCall, Radio, Heart } from 'lucide-react';
 
 export default function App() {
+  const [appFlow, setAppFlow] = useState<'landing' | 'login' | 'app'>('landing');
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [viewMode, setViewMode] = useState<ViewMode>('pc');
   
@@ -136,9 +140,29 @@ export default function App() {
       case 'tv':
         return 'w-full min-h-screen bg-slate-950';
       default:
-        return 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6';
+        return 'max-w-[1600px] mx-auto px-2 sm:px-4 py-4';
     }
   };
+
+  if (appFlow === 'landing') {
+    return (
+      <LandingPageView
+        onGoToLogin={() => setAppFlow('login')}
+        onGoToAppDemo={() => setAppFlow('app')}
+      />
+    );
+  }
+
+  if (appFlow === 'login') {
+    return (
+      <LoginView
+        familyMembers={familyMembers}
+        onSelectMember={setCurrentMember}
+        onLoginSuccess={() => setAppFlow('app')}
+        onBackToLanding={() => setAppFlow('landing')}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-amber-500 selection:text-slate-950">
@@ -148,6 +172,8 @@ export default function App() {
         currentMember={currentMember}
         familyMembers={familyMembers}
         viewMode={viewMode}
+        appFlow={appFlow}
+        onNavigateFlow={(flow) => setAppFlow(flow)}
         onSelectMember={setCurrentMember}
         onChangeViewMode={(mode) => {
           setViewMode(mode);
@@ -159,135 +185,138 @@ export default function App() {
       {/* Responsive View Frame Wrapper */}
       <div className={getViewContainerClass()}>
         
-        {/* Navigation Tabs */}
-        <NavigationTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        {/* Main Content Layout with Left Sidebar */}
+        <div className="flex flex-col md:flex-row rounded-3xl border border-slate-800/80 bg-slate-950/60 backdrop-blur-xl shadow-2xl overflow-hidden min-h-[calc(100vh-100px)]">
+          {/* Left Sidebar Navigation */}
+          <NavigationTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
 
-        {/* View Router */}
-        <main className="p-4 sm:p-6 pb-20">
-          {activeTab === 'dashboard' && (
-            <DashboardView
-              familyMembers={familyMembers}
-              tasks={tasks}
-              onToggleTask={handleToggleTask}
-              smartDevices={smartDevices}
-              onToggleDevice={handleToggleSmartDevice}
-              mealPlan={mealPlans[0]}
-              onNavigateTab={(tab) => setActiveTab(tab)}
-              onOpenSOS={() => setShowSOSModal(true)}
-            />
-          )}
+          {/* View Router */}
+          <main className="flex-1 p-4 sm:p-6 pb-20 min-w-0 overflow-x-hidden">
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                familyMembers={familyMembers}
+                tasks={tasks}
+                onToggleTask={handleToggleTask}
+                smartDevices={smartDevices}
+                onToggleDevice={handleToggleSmartDevice}
+                mealPlan={mealPlans[0]}
+                onNavigateTab={(tab) => setActiveTab(tab)}
+                onOpenSOS={() => setShowSOSModal(true)}
+              />
+            )}
 
-          {activeTab === 'family' && (
-            <FamilyView />
-          )}
+            {activeTab === 'family' && (
+              <FamilyView />
+            )}
 
-          {activeTab === 'calendar' && (
-            <CalendarView />
-          )}
+            {activeTab === 'calendar' && (
+              <CalendarView />
+            )}
 
-          {activeTab === 'reminders' && (
-            <ReminderCenterView />
-          )}
+            {activeTab === 'reminders' && (
+              <ReminderCenterView />
+            )}
 
-          {activeTab === 'assistant' && (
-            <AIAssistantView currentMember={currentMember} familyMembers={familyMembers} />
-          )}
+            {activeTab === 'assistant' && (
+              <AIAssistantView currentMember={currentMember} familyMembers={familyMembers} />
+            )}
 
-          {activeTab === 'mood' && (
-            <MoodDetectionView
-              currentMember={currentMember}
-              moodEntries={moodEntries}
-              onAddMoodEntry={handleAddMoodEntry}
-            />
-          )}
+            {activeTab === 'mood' && (
+              <MoodDetectionView
+                currentMember={currentMember}
+                moodEntries={moodEntries}
+                onAddMoodEntry={handleAddMoodEntry}
+              />
+            )}
 
-          {activeTab === 'psychology' && (
-            <PsychologyView familyMembers={familyMembers} />
-          )}
+            {activeTab === 'psychology' && (
+              <PsychologyView familyMembers={familyMembers} />
+            )}
 
-          {activeTab === 'parenting' && (
-            <ParentingView />
-          )}
+            {activeTab === 'parenting' && (
+              <ParentingView />
+            )}
 
-          {activeTab === 'education' && (
-            <EducationView />
-          )}
+            {activeTab === 'education' && (
+              <EducationView />
+            )}
 
-          {activeTab === 'health' && (
-            <HealthView familyMembers={familyMembers} />
-          )}
+            {activeTab === 'health' && (
+              <HealthView familyMembers={familyMembers} />
+            )}
 
-          {activeTab === 'insurance' && (
-            <InsuranceView familyMembers={familyMembers} />
-          )}
+            {activeTab === 'insurance' && (
+              <InsuranceView familyMembers={familyMembers} />
+            )}
 
-          {activeTab === 'finance' && (
-            <FinanceView
-              budget={budget}
-              familyMembers={familyMembers}
-              onAddBudgetItem={handleAddBudgetItem}
-            />
-          )}
+            {activeTab === 'finance' && (
+              <FinanceView
+                budget={budget}
+                familyMembers={familyMembers}
+                onAddBudgetItem={handleAddBudgetItem}
+              />
+            )}
 
-          {activeTab === 'meals' && (
-            <MealPlannerView mealPlans={mealPlans} familyMembers={familyMembers} />
-          )}
+            {activeTab === 'meals' && (
+              <MealPlannerView mealPlans={mealPlans} familyMembers={familyMembers} />
+            )}
 
-          {activeTab === 'shopping' && (
-            <ShoppingView
-              shoppingItems={shoppingItems}
-              familyMembers={familyMembers}
-              onToggleItem={handleToggleShoppingItem}
-              onAddItem={handleAddShoppingItem}
-              onDeleteItem={handleDeleteShoppingItem}
-            />
-          )}
+            {activeTab === 'shopping' && (
+              <ShoppingView
+                shoppingItems={shoppingItems}
+                familyMembers={familyMembers}
+                onToggleItem={handleToggleShoppingItem}
+                onAddItem={handleAddShoppingItem}
+                onDeleteItem={handleDeleteShoppingItem}
+              />
+            )}
 
-          {activeTab === 'smarthome' && (
-            <SmartHomeView
-              smartDevices={smartDevices}
-              onToggleDevice={handleToggleSmartDevice}
-            />
-          )}
+            {activeTab === 'smarthome' && (
+              <SmartHomeView
+                smartDevices={smartDevices}
+                onToggleDevice={handleToggleSmartDevice}
+              />
+            )}
 
-          {activeTab === 'travel' && (
-            <TravelCenterModule />
-          )}
+            {activeTab === 'travel' && (
+              <TravelCenterModule />
+            )}
 
-          {activeTab === 'safety' && (
-            <SafetyView
-              familyMembers={familyMembers}
-              onOpenSOS={() => setShowSOSModal(true)}
-            />
-          )}
+            {activeTab === 'safety' && (
+              <SafetyView
+                familyMembers={familyMembers}
+                onOpenSOS={() => setShowSOSModal(true)}
+              />
+            )}
 
-          {activeTab === 'communication' && (
-            <CommunicationView
-              stickyNotes={stickyNotes}
-              currentMember={currentMember}
-              onAddStickyNote={handleAddStickyNote}
-            />
-          )}
+            {activeTab === 'communication' && (
+              <CommunicationView
+                stickyNotes={stickyNotes}
+                currentMember={currentMember}
+                onAddStickyNote={handleAddStickyNote}
+              />
+            )}
 
-          {activeTab === 'memories' && (
-            <MemoriesCenterModule />
-          )}
+            {activeTab === 'memories' && (
+              <MemoriesCenterModule />
+            )}
 
-          {activeTab === 'analytics' && (
-            <AnalyticsView />
-          )}
+            {activeTab === 'analytics' && (
+              <AnalyticsView />
+            )}
 
-          {activeTab === 'admin' && (
-            <AdminView
-              familyMembers={familyMembers}
-              onAddMember={handleAddMember}
-              onOpenSmartTV={() => setShowSmartTVOverlay(true)}
-            />
-          )}
-        </main>
+            {activeTab === 'admin' && (
+              <AdminView
+                familyMembers={familyMembers}
+                onAddMember={handleAddMember}
+                onOpenSmartTV={() => setShowSmartTVOverlay(true)}
+              />
+            )}
+          </main>
+        </div>
       </div>
 
       {/* Smart TV Fullscreen Dashboard Mode */}

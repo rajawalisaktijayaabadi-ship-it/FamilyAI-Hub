@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Camera, Video, Upload, Sparkles } from 'lucide-react';
 import { useMemoryStore } from '../../stores/useMemoryStore';
-import { MemoryAlbumCategory } from '../../../types/memories';
+import { MemoryAlbumCategory } from '../../../../types/memories';
 
 const mediaSchema = z.object({
   mediaType: z.enum(['photo', 'video']),

@@ -149,10 +149,22 @@ export interface ShoppingItem {
   id: string;
   name: string;
   category: string;
-  quantity: string;
+  quantity: number | string;
+  unit?: string;
   bought: boolean;
   estimatedPrice: number;
-  addedBy: string;
+  actualPrice?: number;
+  addedBy?: string;
+  priority?: ShoppingPriority | 'Tinggi' | 'Sedang' | 'Biasa' | 'Mendesak';
+  notes?: string;
+  assignedMemberId?: string;
+  assignedMemberName?: string;
+  date?: string;
+  storeName?: string;
+  isRecurring?: boolean;
+  recurringFrequency?: RecurringFrequency | 'Harian' | 'Mingguan' | 'Bulanan' | 'Tahunan';
+  status?: ShoppingStatus | 'pending' | 'completed' | 'cancelled';
+  createdAt?: string;
 }
 
 export interface SmartDevice {
@@ -633,10 +645,11 @@ export interface InsuranceReport {
 export interface InsuranceReminder {
   id: string;
   title: string;
-  type: 'Premi' | 'Perpanjangan Polis' | 'Dokumen' | 'Review Tahunan' | 'Medical Check-up';
+  type: string;
   dueDate: string;
-  priority: 'Tinggi' | 'Sedang' | 'Biasa';
-  isCompleted: boolean;
+  priority?: 'Tinggi' | 'Sedang' | 'Biasa';
+  isCompleted?: boolean;
+  isDismissed?: boolean;
   policyTitle?: string;
   notes?: string;
 }
@@ -743,6 +756,7 @@ export interface HouseholdRoom {
   floorLevel?: string;
   assetCount?: number;
   icon?: string;
+  description?: string;
 }
 
 export interface HouseholdAsset {
@@ -787,6 +801,10 @@ export interface FavoriteStore {
   notes?: string;
   operatingHours?: string;
   favoriteItems?: string[];
+  location?: string;
+  distance?: string;
+  bestCategories?: string[];
+  promoSchedule?: string;
 }
 
 export interface PriceHistory {
@@ -838,6 +856,8 @@ export interface ShoppingNotification {
 export * from './types/meal';
 export * from './types/smarthome';
 export * from './types/memories';
+export * from './types/aiSuperAssistant';
+export * from './types/enterpriseAdmin';
 
 
 

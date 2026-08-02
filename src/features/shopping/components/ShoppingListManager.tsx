@@ -71,7 +71,7 @@ export const ShoppingListManager: React.FC<ShoppingListManagerProps> = ({
     reset,
     setValue,
     formState: { errors }
-  } = useForm<ShoppingFormValues>({
+  } = useForm<any>({
     resolver: zodResolver(shoppingItemSchema),
     defaultValues: {
       name: '',
@@ -118,7 +118,7 @@ export const ShoppingListManager: React.FC<ShoppingListManagerProps> = ({
       notes: item.notes || '',
       assignedMemberId: item.assignedMemberId || '',
       assignedMemberName: item.assignedMemberName || '',
-      date: item.date,
+      date: item.date || new Date().toISOString().split('T')[0],
       storeName: item.storeName || '',
       isRecurring: item.isRecurring || false,
       recurringFrequency: item.recurringFrequency || 'Bulanan'
@@ -126,7 +126,7 @@ export const ShoppingListManager: React.FC<ShoppingListManagerProps> = ({
     setShowAddModal(true);
   };
 
-  const onSubmitForm = (values: ShoppingFormValues) => {
+  const onSubmitForm = (values: any) => {
     const assignedMem = familyMembers.find(m => m.id === values.assignedMemberId);
     const assignedMemberName = assignedMem ? assignedMem.name : values.assignedMemberName || '';
 

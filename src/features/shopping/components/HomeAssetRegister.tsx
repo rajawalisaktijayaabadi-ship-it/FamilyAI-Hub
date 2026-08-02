@@ -57,7 +57,7 @@ export const HomeAssetRegister: React.FC = () => {
     handleSubmit,
     reset,
     formState: { errors }
-  } = useForm<AssetFormValues>({
+  } = useForm<any>({
     resolver: zodResolver(assetSchema),
     defaultValues: {
       name: '',
@@ -113,7 +113,7 @@ export const HomeAssetRegister: React.FC = () => {
     setShowModal(true);
   };
 
-  const onSubmitForm = (values: AssetFormValues) => {
+  const onSubmitForm = (values: any) => {
     const room = rooms.find((r) => r.id === values.roomId);
     const roomName = room ? room.name : 'Ruang Tamu';
 

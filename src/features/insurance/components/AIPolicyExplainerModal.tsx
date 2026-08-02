@@ -38,10 +38,7 @@ export const AIPolicyExplainerModal: React.FC<AIPolicyExplainerModalProps> = ({
       const selectedPolicy = policies.find((p) => p.id === selectedPolicyId);
       const title = selectedPolicy ? selectedPolicy.title : 'Polis Pilihan';
 
-      const res = analyzePolicy(
-        title,
-        queryInput || 'Jelaskan manfaat utama, pengecualian klaim, dan masa tunggu polis ini.'
-      );
+      const res = analyzePolicy(selectedPolicyId);
       setAnalysisResult(res);
       setLoading(false);
     }, 800);

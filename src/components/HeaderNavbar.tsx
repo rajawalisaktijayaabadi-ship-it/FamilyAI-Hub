@@ -22,6 +22,8 @@ interface HeaderNavbarProps {
   onChangeViewMode: (mode: DeviceViewMode) => void;
   onOpenSOS: () => void;
   onOpenAssistant: () => void;
+  appFlow?: 'landing' | 'login' | 'app';
+  onNavigateFlow?: (flow: 'landing' | 'login' | 'app') => void;
 }
 
 export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
@@ -31,7 +33,9 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   viewMode,
   onChangeViewMode,
   onOpenSOS,
-  onOpenAssistant
+  onOpenAssistant,
+  appFlow = 'app',
+  onNavigateFlow
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white px-4 lg:px-8 py-3 transition-all">
@@ -179,6 +183,25 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
                   </div>
                 </button>
               ))}
+
+              {onNavigateFlow && (
+                <div className="pt-1.5 mt-1.5 border-t border-slate-800 space-y-1">
+                  <button
+                    onClick={() => onNavigateFlow('landing')}
+                    className="w-full text-left px-2.5 py-1.5 text-[11px] font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center justify-between"
+                  >
+                    <span>Halaman Utama Landing</span>
+                    <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">Landing</span>
+                  </button>
+                  <button
+                    onClick={() => onNavigateFlow('login')}
+                    className="w-full text-left px-2.5 py-1.5 text-[11px] font-medium text-amber-400 hover:text-amber-300 hover:bg-slate-800 rounded-lg transition-colors flex items-center justify-between"
+                  >
+                    <span>Ganti Akun / Menu Login</span>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">Login</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

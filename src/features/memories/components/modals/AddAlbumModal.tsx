@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, FolderPlus, Sparkles } from 'lucide-react';
 import { useMemoryStore } from '../../stores/useMemoryStore';
-import { MemoryAlbumCategory, AchievementCategory } from '../../../types/memories';
+import { MemoryAlbumCategory, AchievementCategory } from '../../../../types/memories';
 
 const albumSchema = z.object({
   name: z.string().min(3, 'Nama album minimal 3 karakter'),

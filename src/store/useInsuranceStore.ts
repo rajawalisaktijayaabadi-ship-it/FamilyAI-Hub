@@ -54,11 +54,13 @@ interface InsuranceState {
   // Actions - Reminders
   addReminder: (reminder: Omit<InsuranceReminder, 'id' | 'isCompleted'>) => void;
   toggleReminder: (id: string) => void;
+  dismissReminder: (id: string) => void;
 
   // AI & Analysis Helpers
   getProtectionScore: () => ProtectionScore;
   getCoverageSummary: () => CoverageSummary[];
   getPolicyAnalysis: (policyId: string) => PolicyAnalysis;
+  analyzePolicy: (policyId: string) => PolicyAnalysis;
 }
 
 export const useInsuranceStore = create<InsuranceState>((set, get) => ({
@@ -653,5 +655,12 @@ export const useInsuranceStore = create<InsuranceState>((set, get) => ({
       ],
       disclaimer: 'AI bukan agen asuransi resmi. AI tidak memberikan jaminan klaim disetujui atau nasihat hukum.'
     };
-  }
+  },
+
+  dismissReminder: (id) =>
+    set((state) => ({
+      reminders: state.reminders.map((r) => (r.id === id ? { ...r, isDismissed: true } : r))
+    })),
+
+  analyzePolicy: (policyId) => get().getPolicyAnalysis(policyId)
 }));

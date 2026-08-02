@@ -70,7 +70,7 @@ export const SmartInventoryManager: React.FC<SmartInventoryManagerProps> = () =>
     handleSubmit,
     reset,
     formState: { errors }
-  } = useForm<InventoryFormValues>({
+  } = useForm<any>({
     resolver: zodResolver(inventorySchema),
     defaultValues: {
       name: '',
@@ -129,7 +129,7 @@ export const SmartInventoryManager: React.FC<SmartInventoryManagerProps> = () =>
     setShowModal(true);
   };
 
-  const onSubmitForm = (values: InventoryFormValues) => {
+  const onSubmitForm = (values: any) => {
     const loc = locations.find((l) => l.id === values.locationId);
     const locationName = loc ? loc.name : 'Pantry Utama';
 

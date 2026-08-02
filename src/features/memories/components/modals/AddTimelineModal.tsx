@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Clock, Plus } from 'lucide-react';
 import { useMemoryStore } from '../../stores/useMemoryStore';
-import { TimelineEventType } from '../../../types/memories';
+import { TimelineEventType } from '../../../../types/memories';
 
 const timelineSchema = z.object({
   title: z.string().min(3, 'Judul peristiwa minimal 3 karakter'),
@@ -27,7 +27,7 @@ interface AddTimelineModalProps {
 export const AddTimelineModal: React.FC<AddTimelineModalProps> = ({ isOpen, onClose }) => {
   const { addTimelineEvent } = useMemoryStore();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<TimelineFormValues>({
+  const { register, handleSubmit, formState: { errors } } = useForm<any>({
     resolver: zodResolver(timelineSchema),
     defaultValues: {
       title: '',

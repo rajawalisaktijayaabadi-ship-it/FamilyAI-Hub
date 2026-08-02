@@ -11,7 +11,7 @@ import {
   X
 } from 'lucide-react';
 
-import { useShoppingStore, defaultFavoriteStores } from '../../../store/useShoppingStore';
+import { useShoppingStore } from '../../../store/useShoppingStore';
 
 export const FavoriteStoresManager: React.FC = () => {
   const { favoriteStores } = useShoppingStore();
@@ -19,7 +19,7 @@ export const FavoriteStoresManager: React.FC = () => {
 
   const filteredStores = favoriteStores.filter((store) =>
     store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    store.location.toLowerCase().includes(searchTerm.toLowerCase())
+    (store.location || store.address || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

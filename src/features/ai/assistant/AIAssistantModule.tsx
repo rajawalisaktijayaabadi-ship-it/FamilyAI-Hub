@@ -6,29 +6,59 @@ import {
   Brain, 
   Sparkles, 
   Settings, 
-  Sliders 
+  LayoutDashboard, 
+  Zap, 
+  GitMerge, 
+  TrendingUp, 
+  Layers, 
+  Target, 
+  Search, 
+  FileText 
 } from 'lucide-react';
-import { AIChatWindow } from '../chat/AIChatWindow';
-import { AIHistoryView } from '../history/AIHistoryView';
-import { AIMemoryView } from '../memory/AIMemoryView';
+
+import { AISuperDashboard } from '../components/AISuperDashboard';
+import { AIChatAssistantView } from '../components/AIChatAssistantView';
+import { AIAutomationCenter } from '../components/AIAutomationCenter';
+import { VisualWorkflowBuilder } from '../components/VisualWorkflowBuilder';
+import { AIInsightCenter } from '../components/AIInsightCenter';
 import { AIRecommendationView } from '../recommendation/AIRecommendationView';
+import { AIMemoryEngineView } from '../components/AIMemoryEngineView';
+import { AIContextEngineView } from '../components/AIContextEngineView';
+import { AIGoalsHabitsRoutinesView } from '../components/AIGoalsHabitsRoutinesView';
+import { AIKnowledgeAndSearchView } from '../components/AIKnowledgeAndSearchView';
+import { AIReportAndNotificationView } from '../components/AIReportAndNotificationView';
+import { AIHistoryView } from '../history/AIHistoryView';
 import { AISettingsModal } from '../components/AISettingsModal';
 import { useContextStore } from '../stores/useContextStore';
+
+type AISubTab = 
+  | 'dashboard' 
+  | 'chat' 
+  | 'automation' 
+  | 'workflow' 
+  | 'insights' 
+  | 'recommendation' 
+  | 'memory' 
+  | 'context' 
+  | 'goals' 
+  | 'search' 
+  | 'reports' 
+  | 'history';
 
 interface AIAssistantModuleProps {
   currentMember?: any;
   familyMembers?: any[];
   familyProfile?: any;
-  initialSubTab?: 'chat' | 'history' | 'memory' | 'recommendation';
+  initialSubTab?: AISubTab;
 }
 
 export const AIAssistantModule: React.FC<AIAssistantModuleProps> = ({
   currentMember,
   familyMembers = [],
   familyProfile,
-  initialSubTab = 'chat'
+  initialSubTab = 'dashboard'
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'chat' | 'history' | 'memory' | 'recommendation'>(initialSubTab);
+  const [activeSubTab, setActiveSubTab] = useState<AISubTab>(initialSubTab);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const { initContext } = useContextStore();
@@ -48,13 +78,13 @@ export const AIAssistantModule: React.FC<AIAssistantModuleProps> = ({
           </div>
           <div>
             <h2 className="text-2xl font-extrabold text-white flex items-center gap-2">
-              <span>AI Family Assistant Core</span>
+              <span>AI Family Super Assistant Platform</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold">
-                v3.0 Core Engine
+                Enterprise AI Core
               </span>
             </h2>
             <p className="text-slate-400 text-xs mt-0.5">
-              Pusat kecerdasan terpadu FamilyAI Hub: Chat Engine, Context Memory, Histori, dan Rekomendasi Cerdas.
+              Pusat Otomasi, Memori Lintas Modul, Visual Workflow Builder, & Executive Briefing Keluarga.
             </p>
           </div>
         </div>
@@ -71,59 +101,163 @@ export const AIAssistantModule: React.FC<AIAssistantModuleProps> = ({
       {/* Sub Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-800 overflow-x-auto pb-2">
         <button
+          onClick={() => setActiveSubTab('dashboard')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeSubTab === 'dashboard'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <LayoutDashboard className="w-4 h-4 text-amber-300" />
+          <span>Super AI Dashboard</span>
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('chat')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
             activeSubTab === 'chat'
-              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+              ? 'bg-indigo-600 text-white shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
           }`}
         >
-          <MessageSquare className="w-4 h-4" />
-          <span>AI Chat Interface</span>
+          <MessageSquare className="w-4 h-4 text-emerald-400" />
+          <span>Gemini Chat Assistant</span>
         </button>
 
         <button
-          onClick={() => setActiveSubTab('history')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
-            activeSubTab === 'history'
-              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+          onClick={() => setActiveSubTab('automation')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeSubTab === 'automation'
+              ? 'bg-indigo-600 text-white shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
           }`}
         >
-          <History className="w-4 h-4 text-sky-400" />
-          <span>Histori Percakapan</span>
+          <Zap className="w-4 h-4 text-amber-400" />
+          <span>Aturan Otomasi</span>
         </button>
 
         <button
-          onClick={() => setActiveSubTab('memory')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
-            activeSubTab === 'memory'
-              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+          onClick={() => setActiveSubTab('workflow')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeSubTab === 'workflow'
+              ? 'bg-indigo-600 text-white shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
           }`}
         >
-          <Brain className="w-4 h-4 text-purple-400" />
-          <span>Sistem AI Memory</span>
+          <GitMerge className="w-4 h-4 text-purple-400" />
+          <span>Visual Workflow Builder</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('insights')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeSubTab === 'insights'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4 text-sky-400" />
+          <span>AI Insight Center</span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('recommendation')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
             activeSubTab === 'recommendation'
-              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+              ? 'bg-indigo-600 text-white shadow-md'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
           }`}
         >
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>Smart Recommendation Engine</span>
+          <Sparkles className="w-4 h-4 text-amber-300" />
+          <span>Rekomendasi Cerdas</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('memory')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeSubTab === 'memory'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Brain className="w-4 h-4 text-purple-300" />
+          <span>Sistem Memory AI</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('context')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeSubTab === 'context'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Layers className="w-4 h-4 text-indigo-300" />
+          <span>Context Matrix (16 Modul)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('goals')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeSubTab === 'goals'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Target className="w-4 h-4 text-rose-400" />
+          <span>Target & Kebiasaan</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('search')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeSubTab === 'search'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Search className="w-4 h-4 text-teal-300" />
+          <span>Pencarian Global & FAQ</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('reports')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeSubTab === 'reports'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <FileText className="w-4 h-4 text-amber-400" />
+          <span>Laporan & Notifikasi</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('history')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeSubTab === 'history'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <History className="w-4 h-4 text-sky-400" />
+          <span>Histori</span>
         </button>
       </div>
 
       {/* Sub Tab Views */}
-      {activeSubTab === 'chat' && <AIChatWindow />}
-      {activeSubTab === 'history' && <AIHistoryView />}
-      {activeSubTab === 'memory' && <AIMemoryView />}
+      {activeSubTab === 'dashboard' && <AISuperDashboard />}
+      {activeSubTab === 'chat' && <AIChatAssistantView currentMember={currentMember} />}
+      {activeSubTab === 'automation' && <AIAutomationCenter />}
+      {activeSubTab === 'workflow' && <VisualWorkflowBuilder />}
+      {activeSubTab === 'insights' && <AIInsightCenter />}
       {activeSubTab === 'recommendation' && <AIRecommendationView />}
+      {activeSubTab === 'memory' && <AIMemoryEngineView />}
+      {activeSubTab === 'context' && <AIContextEngineView />}
+      {activeSubTab === 'goals' && <AIGoalsHabitsRoutinesView />}
+      {activeSubTab === 'search' && <AIKnowledgeAndSearchView />}
+      {activeSubTab === 'reports' && <AIReportAndNotificationView />}
+      {activeSubTab === 'history' && <AIHistoryView />}
 
       <AISettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
