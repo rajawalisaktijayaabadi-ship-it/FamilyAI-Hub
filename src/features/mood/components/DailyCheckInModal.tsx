@@ -6,6 +6,11 @@ import { X, Sparkles, Heart, Zap, Moon, Activity, Lock, Users, ShieldCheck } fro
 import { useMoodStore } from '../stores/useMoodStore';
 import { SupportedMoodType, PrivacyLevel } from '../types/moodTypes';
 import { MOOD_META_MAP } from '../utils/moodData';
+import { FamilyMember } from '../../../types';
+
+interface DailyCheckInModalProps {
+  currentMember?: FamilyMember;
+}
 
 const checkInSchema = z.object({
   mood: z.string().min(1, 'Pilih mood hari ini'),
@@ -37,17 +42,22 @@ const ACTIVITY_OPTIONS = [
   'Makan Sehat'
 ];
 
-export const DailyCheckInModal: React.FC = () => {
+export const DailyCheckInModal: React.FC<DailyCheckInModalProps> = ({ currentMember: propMember }) => {
   const { isCheckInModalOpen, setCheckInModalOpen, addCheckIn, familyMoods } = useMoodStore();
   const [submitting, setSubmitting] = useState(false);
 
-  // Current user mock (Ayah - Budi Santoso)
-  const currentMember = familyMoods[0] || {
+  // Use active logged in member account if provided, fallback to default store member
+  const currentMember = propMember ? {
+    memberId: propMember.id,
+    memberName: propMember.name,
+    detailedRole: propMember.roleTitle || propMember.detailedRole || propMember.relationship || 'Anggota Keluarga',
+    avatar: propMember.avatar
+  } : (familyMoods[0] || {
     memberId: 'mem_1',
     memberName: 'Budi Santoso',
     detailedRole: 'Ayah',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
-  };
+  });
 
   const {
     register,

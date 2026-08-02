@@ -67,7 +67,7 @@ export const DigitalStoryBookTab: React.FC<DigitalStoryBookTabProps> = ({ onOpen
             <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
               <div className="flex items-center gap-1">
                 <User className="w-3.5 h-3.5 text-amber-400" />
-                <span>Anggota: {story.associatedMemberIds.join(', ')}</span>
+                <span>Anggota: {story.associatedMemberIds?.join(', ') || 'Seluruh Keluarga'}</span>
               </div>
 
               <button

@@ -211,7 +211,7 @@ export const ClaimCenterTab: React.FC<ClaimCenterTabProps> = ({ familyMembers })
             <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs">
               <div className="font-bold text-slate-300">Catatan Histori Verifikasi:</div>
               <div className="space-y-1.5">
-                {claim.timeline.map((item, idx) => (
+                {(claim.timeline || []).map((item, idx) => (
                   <div key={idx} className="flex items-start gap-2 text-slate-400">
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0 mt-1.5" />
                     <div>

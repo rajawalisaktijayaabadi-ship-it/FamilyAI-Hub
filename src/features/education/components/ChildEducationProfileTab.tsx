@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { School, GraduationCap, UserCheck, Sparkles, Save, Plus, Trash2, BookOpen, Target, Heart } from 'lucide-react';
 import { useEducationStore } from '../../../store/useEducationStore';
 
@@ -10,8 +10,8 @@ export const ChildEducationProfileTab: React.FC<ChildEducationProfileTabProps> =
   const { selectedChildId, profiles, updateProfile } = useEducationStore();
   const currentProfile = profiles[selectedChildId];
 
-  const [schoolName, setSchoolName] = useState(currentProfile?.schoolName || 'SD Nusantara Utama');
-  const [grade, setGrade] = useState(currentProfile?.grade || 'Kelas 5 SD');
+  const [schoolName, setSchoolName] = useState(currentProfile?.schoolName || 'Sekolah Nusantara');
+  const [grade, setGrade] = useState(currentProfile?.grade || 'SD / SMA');
   const [semester, setSemester] = useState(currentProfile?.semester || 'Semester 1 (2026/2027)');
   const [nisn, setNisn] = useState(currentProfile?.nisn || '');
   const [homeroomTeacher, setHomeroomTeacher] = useState(currentProfile?.homeroomTeacher || '');
@@ -20,13 +20,27 @@ export const ChildEducationProfileTab: React.FC<ChildEducationProfileTabProps> =
   const [favSubjects, setFavSubjects] = useState<string[]>(currentProfile?.favoriteSubjects || ['Matematika', 'Coding']);
   const [newFav, setNewFav] = useState('');
 
-  const [extracurriculars, setExtracurriculars] = useState<string[]>(currentProfile?.extracurriculars || ['Catur', 'Robotics']);
+  const [extracurriculars, setExtracurriculars] = useState<string[]>(currentProfile?.extracurriculars || ['Pramuka']);
   const [newExtra, setNewExtra] = useState('');
 
   const [goals, setGoals] = useState<string[]>(currentProfile?.academicGoals || ['Nilai Rapor ≥ 90']);
   const [newGoal, setNewGoal] = useState('');
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  useEffect(() => {
+    if (currentProfile) {
+      setSchoolName(currentProfile.schoolName || 'Sekolah Nusantara');
+      setGrade(currentProfile.grade || 'SD / SMA');
+      setSemester(currentProfile.semester || 'Semester 1 (2026/2027)');
+      setNisn(currentProfile.nisn || '');
+      setHomeroomTeacher(currentProfile.homeroomTeacher || '');
+      setSpecialNotes(currentProfile.specialNotes || '');
+      setFavSubjects(currentProfile.favoriteSubjects || ['Matematika', 'Coding']);
+      setExtracurriculars(currentProfile.extracurriculars || ['Pramuka']);
+      setGoals(currentProfile.academicGoals || ['Nilai Rapor ≥ 90']);
+    }
+  }, [selectedChildId, currentProfile]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();

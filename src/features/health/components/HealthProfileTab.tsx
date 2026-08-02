@@ -292,7 +292,7 @@ export const HealthProfileTab: React.FC<HealthProfileTabProps> = ({
                 {/* Allergies */}
                 <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
                   <span className="font-bold text-amber-400 uppercase tracking-wider block">Daftar Alergi Rekam Medis</span>
-                  {profile.allergies.length === 0 ? (
+                  {(!profile?.allergies || profile.allergies.length === 0) ? (
                     <p className="text-slate-500">Tidak ada riwayat alergi tercatat.</p>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
@@ -308,7 +308,7 @@ export const HealthProfileTab: React.FC<HealthProfileTabProps> = ({
                 {/* Chronic / Disease History */}
                 <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
                   <span className="font-bold text-rose-400 uppercase tracking-wider block">Riwayat Penyakit & Kondisi</span>
-                  {profile.medicalHistory.length === 0 ? (
+                  {(!profile?.medicalHistory || profile.medicalHistory.length === 0) ? (
                     <p className="text-slate-500">Bebas penyakit kronis.</p>
                   ) : (
                     <ul className="space-y-1 text-slate-300">
@@ -328,14 +328,14 @@ export const HealthProfileTab: React.FC<HealthProfileTabProps> = ({
                 <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
                   <span className="font-bold text-slate-400 uppercase tracking-wider block">Riwayat Operasi</span>
                   <p className="text-slate-200">
-                    {profile.surgeryHistory.length > 0 ? profile.surgeryHistory.join(', ') : 'Tidak ada riwayat operasi.'}
+                    {(profile?.surgeryHistory?.length || 0) > 0 ? profile?.surgeryHistory?.join(', ') : 'Tidak ada riwayat operasi.'}
                   </p>
                 </div>
 
                 <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
                   <span className="font-bold text-slate-400 uppercase tracking-wider block">Obat Rutin Dipakai</span>
                   <p className="text-slate-200">
-                    {profile.routineMedications.length > 0 ? profile.routineMedications.join(', ') : 'Tidak ada obat rutin.'}
+                    {(profile?.routineMedications?.length || 0) > 0 ? profile?.routineMedications?.join(', ') : 'Tidak ada obat rutin.'}
                   </p>
                 </div>
               </div>

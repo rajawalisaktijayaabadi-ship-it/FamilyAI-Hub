@@ -187,7 +187,7 @@ export const FamilyEventCenterTab: React.FC = () => {
             </form>
 
             <div className="space-y-2">
-              {activePlanner.checklist.map((chk) => (
+              {(activePlanner.checklist || []).map((chk) => (
                 <div
                   key={chk.id}
                   onClick={() => toggleEventChecklistItem(activePlanner.id, chk.id)}

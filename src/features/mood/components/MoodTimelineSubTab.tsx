@@ -88,6 +88,9 @@ export const MoodTimelineSubTab: React.FC = () => {
         ) : (
           filteredCheckIns.map((chk, index) => {
             const meta = MOOD_META_MAP[chk.mood] || MOOD_META_MAP.happy;
+            const matchMember = familyMoods.find(m => m.memberId === chk.memberId || m.memberName.toLowerCase() === chk.memberName.toLowerCase());
+            const displayAvatar = matchMember?.avatar || chk.memberAvatar;
+
             return (
               <div key={chk.id} className="flex items-start gap-4 sm:pl-4 relative">
                 {/* Timeline Dot */}
@@ -99,7 +102,7 @@ export const MoodTimelineSubTab: React.FC = () => {
                 <div className="flex-1 bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 space-y-3 shadow-md">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
                     <div className="flex items-center gap-2.5">
-                      <img src={chk.memberAvatar} alt={chk.memberName} className="w-8 h-8 rounded-full object-cover ring-2 ring-indigo-500/30" />
+                      <img src={displayAvatar} alt={chk.memberName} className="w-8 h-8 rounded-full object-cover ring-2 ring-indigo-500/30" />
                       <div>
                         <div className="font-bold text-xs text-white">{chk.memberName} ({chk.memberRole})</div>
                         <div className="text-[10px] text-slate-400">{chk.date} • {chk.timestamp}</div>

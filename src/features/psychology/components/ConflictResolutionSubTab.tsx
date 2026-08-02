@@ -213,7 +213,7 @@ export const ConflictResolutionSubTab: React.FC = () => {
                   {c.category}
                 </span>
                 <h3 className="font-bold text-base text-white mt-1">{c.title}</h3>
-                <div className="text-[11px] text-slate-400">Pihak Terlibat: {c.participants.join(' & ')}</div>
+                <div className="text-[11px] text-slate-400">Pihak Terlibat: {c.participants?.join(' & ') || '-'}</div>
               </div>
 
               <div className="flex items-center gap-2">

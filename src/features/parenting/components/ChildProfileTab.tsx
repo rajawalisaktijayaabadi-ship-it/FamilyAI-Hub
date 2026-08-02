@@ -45,6 +45,8 @@ export const ChildProfileTab: React.FC<ChildProfileTabProps> = ({
     birthDate: '2016-04-15',
     age: 10,
     gender: 'Laki-laki' as 'Laki-laki' | 'Perempuan',
+    heightCm: 140 as number | string,
+    weightKg: 35 as number | string,
     school: '',
     grade: '',
     bloodType: 'O+' as Child['bloodType'],
@@ -64,6 +66,8 @@ export const ChildProfileTab: React.FC<ChildProfileTabProps> = ({
       birthDate: '2018-05-10',
       age: 8,
       gender: 'Laki-laki',
+      heightCm: 135,
+      weightKg: 30,
       school: 'SD Nusantara',
       grade: 'Kelas 3 SD',
       bloodType: 'O+',
@@ -85,14 +89,16 @@ export const ChildProfileTab: React.FC<ChildProfileTabProps> = ({
       birthDate: child.birthDate,
       age: child.age,
       gender: child.gender,
+      heightCm: child.heightCm || 140,
+      weightKg: child.weightKg || 35,
       school: child.school,
       grade: child.grade,
       bloodType: child.bloodType,
-      allergiesStr: child.allergies.join(', '),
-      hobbiesStr: child.hobbies.join(', '),
-      interestsStr: child.interests.join(', '),
-      talentsStr: child.talents.join(', '),
-      goalsStr: child.goals.join(', '),
+      allergiesStr: child.allergies?.join(', ') || '',
+      hobbiesStr: child.hobbies?.join(', ') || '',
+      interestsStr: child.interests?.join(', ') || '',
+      talentsStr: child.talents?.join(', ') || '',
+      goalsStr: child.goals?.join(', ') || '',
       parentNotes: child.parentNotes
     });
     setShowModal(true);
@@ -109,6 +115,8 @@ export const ChildProfileTab: React.FC<ChildProfileTabProps> = ({
       birthDate: formData.birthDate,
       age: Number(formData.age),
       gender: formData.gender,
+      heightCm: Number(formData.heightCm) || 0,
+      weightKg: Number(formData.weightKg) || 0,
       school: formData.school,
       grade: formData.grade,
       bloodType: formData.bloodType,
@@ -277,9 +285,15 @@ export const ChildProfileTab: React.FC<ChildProfileTabProps> = ({
             <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
               <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
                 <ShieldAlert className="w-4 h-4" />
-                <span>Kesehatan & Alergi</span>
+                <span>Kesehatan & Fisik</span>
               </div>
               <div className="space-y-2 text-xs">
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Tinggi & Berat Badan:</span>
+                  <span className="font-bold text-emerald-300">
+                    {activeChild.heightCm ? `${activeChild.heightCm} cm` : 'Belum diisi'} • {activeChild.weightKg ? `${activeChild.weightKg} kg` : 'Belum diisi'}
+                  </span>
+                </div>
                 <div>
                   <span className="text-slate-400 block text-[10px]">Golongan Darah:</span>
                   <span className="font-semibold text-white">{activeChild.bloodType}</span>
@@ -310,11 +324,11 @@ export const ChildProfileTab: React.FC<ChildProfileTabProps> = ({
               <div className="space-y-2 text-xs">
                 <div>
                   <span className="text-slate-400 block text-[10px]">Hobi:</span>
-                  <p className="font-semibold text-slate-200">{activeChild.hobbies.join(', ') || '-'}</p>
+                  <p className="font-semibold text-slate-200">{activeChild.hobbies?.join(', ') || '-'}</p>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[10px]">Minat & Bakat:</span>
-                  <p className="font-semibold text-purple-300">{activeChild.interests.join(', ')} / {activeChild.talents.join(', ')}</p>
+                  <p className="font-semibold text-purple-300">{(activeChild.interests?.join(', ') || '-')} / {(activeChild.talents?.join(', ') || '-')}</p>
                 </div>
               </div>
             </div>
@@ -326,7 +340,7 @@ export const ChildProfileTab: React.FC<ChildProfileTabProps> = ({
                 <span>Target Perkembangan Anak</span>
               </div>
               <ul className="space-y-1.5 text-xs text-slate-200">
-                {activeChild.goals.map((g, i) => (
+                {(activeChild.goals || []).map((g, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <span className="text-emerald-400 font-bold">•</span>
                     <span>{g}</span>
@@ -443,6 +457,34 @@ export const ChildProfileTab: React.FC<ChildProfileTabProps> = ({
                     <option value="O+">O+</option>
                     <option value="O-">O-</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 font-semibold block mb-1">Tinggi Badan (cm)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min={30}
+                    max={220}
+                    value={formData.heightCm}
+                    onChange={(e) => setFormData({ ...formData, heightCm: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 outline-none focus:border-pink-500 font-semibold text-emerald-400"
+                    placeholder="Contoh: 140"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-400 font-semibold block mb-1">Berat Badan (kg)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min={2}
+                    max={150}
+                    value={formData.weightKg}
+                    onChange={(e) => setFormData({ ...formData, weightKg: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 outline-none focus:border-pink-500 font-semibold text-emerald-400"
+                    placeholder="Contoh: 35"
+                  />
                 </div>
 
                 <div>

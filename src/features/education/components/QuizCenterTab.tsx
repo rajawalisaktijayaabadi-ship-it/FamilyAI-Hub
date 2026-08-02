@@ -8,7 +8,12 @@ import {
   Sparkles,
   RotateCcw,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  Plus,
+  X,
+  Loader2,
+  Sliders,
+  Brain
 } from 'lucide-react';
 import { useEducationStore } from '../../../store/useEducationStore';
 import { Quiz, QuizQuestion } from '../types';
@@ -18,8 +23,9 @@ interface QuizCenterTabProps {
 }
 
 export const QuizCenterTab: React.FC<QuizCenterTabProps> = ({ childName }) => {
-  const { selectedChildId, quizzes, quizResults, addQuizResult } = useEducationStore();
+  const { selectedChildId, profiles, quizzes, quizResults, addQuizResult, addQuiz } = useEducationStore();
 
+  const childProfile = profiles[selectedChildId];
   const childResults = quizResults.filter((r) => r.childId === selectedChildId);
 
   // Active quiz session state
@@ -31,6 +37,15 @@ export const QuizCenterTab: React.FC<QuizCenterTabProps> = ({ childName }) => {
   const [correctCount, setCorrectCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
 
+  // AI Quiz Generator Modal state
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [subjectInput, setSubjectInput] = useState('Matematika');
+  const [materiInput, setMateriInput] = useState('');
+  const [difficulty, setDifficulty] = useState<'Mudah' | 'Sedang' | 'Sangat Sukar'>('Sedang');
+  const [questionCount, setQuestionCount] = useState<number>(3);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+
   const startQuizSession = (quiz: Quiz) => {
     setActiveQuiz(quiz);
     setCurrentQuestionIdx(0);
@@ -39,6 +54,72 @@ export const QuizCenterTab: React.FC<QuizCenterTabProps> = ({ childName }) => {
     setUserScore(0);
     setCorrectCount(0);
     setIsFinished(false);
+  };
+
+  const handleGenerateQuiz = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!materiInput.trim()) {
+      setGenerateError('Silakan masukkan topik / materi kuis yang ingin dipelajari.');
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerateError(null);
+
+    try {
+      const res = await fetch('/api/ai/education', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'quiz',
+          subject: subjectInput,
+          materi: materiInput,
+          gradeLevel: childProfile?.grade || 'SD / SMA',
+          difficulty,
+          questionCount
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const newQuiz: Omit<Quiz, 'id'> = {
+          subject: data.subject || subjectInput,
+          topic: data.topic || materiInput,
+          difficulty: (data.difficulty as Quiz['difficulty']) || difficulty,
+          questions: data.questions && data.questions.length > 0 ? data.questions : [
+            {
+              id: 1,
+              question: `Soal Latihan Dasar tentang ${materiInput}: Manakah konsep utama yang benar?`,
+              options: [
+                'Memahami konsep dasar dan latihan konsisten',
+                'Mengabaikan rumus dasar',
+                'Hanya membaca tanpa mengerjakan soal',
+                'Tidak perlu memeriksa jawaban'
+              ],
+              correctIndex: 0,
+              explanation: `Latihan konsisten pada ${materiInput} memperkuat pemahaman logika.`
+            }
+          ]
+        };
+
+        addQuiz(newQuiz);
+        setIsGenerateModalOpen(false);
+        setMateriInput('');
+
+        // Start created quiz immediately
+        const createdQuizWithId: Quiz = {
+          ...newQuiz,
+          id: `qz-${Date.now()}`
+        };
+        startQuizSession(createdQuizWithId);
+      } else {
+        setGenerateError('Gagal membuat kuis. Mencoba kembali...');
+      }
+    } catch (err) {
+      setGenerateError('Terjadi kesalahan koneksi saat membuat kuis AI.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSelectOption = (idx: number) => {
@@ -97,6 +178,14 @@ export const QuizCenterTab: React.FC<QuizCenterTabProps> = ({ childName }) => {
             Uji pemahaman materi dengan kuis pilihan ganda interaktif & penjelasan komprehensif.
           </p>
         </div>
+
+        <button
+          onClick={() => setIsGenerateModalOpen(true)}
+          className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all shrink-0"
+        >
+          <Sparkles className="w-4 h-4 fill-white" />
+          <span>Buat Kuis AI Baru</span>
+        </button>
       </div>
 
       {/* Available Quizzes & Active Session */}
@@ -117,7 +206,7 @@ export const QuizCenterTab: React.FC<QuizCenterTabProps> = ({ childName }) => {
                   </div>
 
                   <h3 className="text-base font-bold text-white">{quiz.topic}</h3>
-                  <p className="text-xs text-slate-400">Tingkat Kesulitan: {quiz.difficulty}</p>
+                  <p className="text-xs text-slate-400">Tingkat Kesulitan: <span className="text-amber-400 font-semibold">{quiz.difficulty}</span></p>
                 </div>
 
                 <button
@@ -280,6 +369,147 @@ export const QuizCenterTab: React.FC<QuizCenterTabProps> = ({ childName }) => {
           )}
         </div>
       )}
+
+      {/* AI Quiz Generator Modal */}
+      {isGenerateModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative animate-fade-in">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
+                  <Brain className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Generate Kuis AI Baru</h3>
+                  <p className="text-[11px] text-slate-400">Input mata pelajaran & materi untuk buat soal kuis otomatis</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsGenerateModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleGenerateQuiz} className="space-y-4">
+              {generateError && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300">
+                  {generateError}
+                </div>
+              )}
+
+              {/* Mata Pelajaran */}
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1.5">
+                  1. Pilih / Input Mata Pelajaran
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
+                  {['Matematika', 'Fisika', 'IPA', 'B. Indonesia', 'B. Inggris', 'Coding Python'].map((subj) => (
+                    <button
+                      type="button"
+                      key={subj}
+                      onClick={() => setSubjectInput(subj)}
+                      className={`py-1.5 px-2.5 text-[11px] font-bold rounded-xl border transition-all ${
+                        subjectInput === subj
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {subj}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={subjectInput}
+                  onChange={(e) => setSubjectInput(e.target.value)}
+                  placeholder="Ketik Mata Pelajaran (Contoh: Biologi / Sejarah)"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-500 font-medium"
+                />
+              </div>
+
+              {/* Materi / Topik */}
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1.5">
+                  2. Topik / Materi Khusus Kuis <span className="text-amber-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={materiInput}
+                  onChange={(e) => setMateriInput(e.target.value)}
+                  placeholder="Contoh: Kalkulus Limit, Termodinamika, Grammar Past Tense, Pecahan"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-500 font-medium placeholder:text-slate-600"
+                />
+              </div>
+
+              {/* Tingkat Kesulitan & Jumlah Soal */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1.5">
+                    3. Tingkat Kesulitan
+                  </label>
+                  <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-500 font-semibold"
+                  >
+                    <option value="Mudah">Mudah</option>
+                    <option value="Sedang">Sedang</option>
+                    <option value="Sangat Sukar">Sangat Sukar</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1.5">
+                    4. Jumlah Soal
+                  </label>
+                  <select
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-amber-500 font-semibold"
+                  >
+                    <option value={3}>3 Soal (Cepat)</option>
+                    <option value={5}>5 Soal (Standar)</option>
+                    <option value={10}>10 Soal (Lengkap)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsGenerateModalOpen(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+                >
+                  Batal
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isGenerating}
+                  className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-amber-500/20"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Menyusun Soal AI...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 fill-white" />
+                      <span>Generate Kuis AI</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

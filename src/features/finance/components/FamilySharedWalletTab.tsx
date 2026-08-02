@@ -79,7 +79,7 @@ export const FamilySharedWalletTab: React.FC<FamilySharedWalletTabProps> = ({ fa
 
             <div className="text-xs text-slate-400 flex items-center gap-2">
               <Users className="w-4 h-4 text-indigo-400" />
-              <span>Akses Anggota: {sw.allowedMembers.join(', ')}</span>
+              <span>Akses Anggota: {sw.allowedMembers?.join(', ') || 'Semua Anggota'}</span>
             </div>
           </div>
         ))}

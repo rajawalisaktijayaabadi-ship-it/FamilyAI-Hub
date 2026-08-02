@@ -80,7 +80,7 @@ export const MealReportsModal: React.FC<MealReportsModalProps> = ({ isOpen, onCl
               <span>Insight AI Nutrisi & Efisiensi Dapur:</span>
             </h4>
             <ul className="space-y-2 text-xs text-slate-200">
-              {report.insights.map((ins, idx) => (
+              {(report.insights || []).map((ins, idx) => (
                 <li key={idx} className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                   <span>{ins}</span>

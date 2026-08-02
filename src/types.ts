@@ -33,6 +33,10 @@ export interface FamilyMember {
   gender?: 'Laki-laki' | 'Perempuan';
   phone?: string;
   email?: string;
+  gmailAccount?: string;
+  username?: string;
+  password?: string;
+  pinCode?: string;
   avatar: string;
   mood: 'happy' | 'calm' | 'stressed' | 'sad' | 'energetic' | 'anxious';
   statusText: string;

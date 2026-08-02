@@ -221,7 +221,7 @@ export const HouseholdTaskManager: React.FC<HouseholdTaskManagerProps> = ({
                   {/* Checklist Items */}
                   {task.checklist && task.checklist.length > 0 && (
                     <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800/80 space-y-1.5 text-xs">
-                      {task.checklist.map((item, idx) => (
+                      {(task.checklist || []).map((item, idx) => (
                         <div
                           key={item.id}
                           onClick={() => toggleChecklistItem(task.id, idx)}

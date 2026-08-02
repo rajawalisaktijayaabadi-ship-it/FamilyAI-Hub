@@ -150,7 +150,7 @@ export const NutritionCenterTab: React.FC = () => {
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
                 <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">Vitamin Utama</span>
                 <div className="space-y-2 text-xs">
-                  {summary.vitamins.map((v, idx) => (
+                  {(summary.vitamins || []).map((v, idx) => (
                     <div key={idx} className="space-y-1">
                       <div className="flex items-center justify-between text-slate-300">
                         <span>{v.name} ({v.amount})</span>
@@ -168,7 +168,7 @@ export const NutritionCenterTab: React.FC = () => {
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
                 <span className="text-xs font-bold text-teal-400 uppercase tracking-wider block">Mineral Esensial</span>
                 <div className="space-y-2 text-xs">
-                  {summary.minerals.map((m, idx) => (
+                  {(summary.minerals || []).map((m, idx) => (
                     <div key={idx} className="space-y-1">
                       <div className="flex items-center justify-between text-slate-300">
                         <span>{m.name} ({m.amount})</span>
@@ -219,7 +219,7 @@ export const NutritionCenterTab: React.FC = () => {
                 <div>
                   <span className="font-bold text-amber-400 block mb-1">Makanan Favorit:</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {currentPref.favoriteFoods.map((f, i) => (
+                    {(currentPref.favoriteFoods || []).map((f, i) => (
                       <span key={i} className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20">
                         ❤️ {f}
                       </span>
@@ -227,11 +227,11 @@ export const NutritionCenterTab: React.FC = () => {
                   </div>
                 </div>
 
-                {currentPref.allergies.length > 0 && (
+                {(currentPref.allergies?.length || 0) > 0 && (
                   <div>
                     <span className="font-bold text-rose-400 block mb-1">Alergi Makanan (Penting):</span>
                     <div className="flex flex-wrap gap-1.5">
-                      {currentPref.allergies.map((a, i) => (
+                      {(currentPref.allergies || []).map((a, i) => (
                         <span key={i} className="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold flex items-center gap-1">
                           <ShieldAlert className="w-3.5 h-3.5" />
                           {a}
@@ -244,7 +244,7 @@ export const NutritionCenterTab: React.FC = () => {
                 <div>
                   <span className="font-bold text-purple-400 block mb-1">Pantangan / Batasan Diet:</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {currentPref.restrictions.map((r, i) => (
+                    {(currentPref.restrictions || []).map((r, i) => (
                       <span key={i} className="px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-300 border border-purple-500/20">
                         🚫 {r}
                       </span>

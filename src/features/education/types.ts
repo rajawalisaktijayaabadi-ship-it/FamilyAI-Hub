@@ -20,7 +20,7 @@ export type HomeworkStatus = 'Belum Dikerjakan' | 'Sedang Dikerjakan' | 'Menungg
 
 export type HomeworkCategory = 'Tugas Harian' | 'PR' | 'Proyek' | 'Presentasi' | 'Portofolio';
 
-export type ReadingCategory = 'Buku' | 'Artikel' | 'Komik Edukasi' | 'Novel' | 'Jurnal';
+export type ReadingCategory = 'Buku' | 'Artikel' | 'Komik Edukasi' | 'Novel' | 'Jurnal' | 'Buku Edukasi' | string;
 
 export type SkillCategory =
   | 'Coding'
@@ -33,7 +33,8 @@ export type SkillCategory =
   | 'Menggambar'
   | 'Fotografi'
   | 'Video Editing'
-  | 'Entrepreneurship';
+  | 'Entrepreneurship'
+  | string;
 
 export type SkillLevel = 'Pemula' | 'Menengah' | 'Lanjutan' | 'Mahir';
 
@@ -197,7 +198,7 @@ export interface EducationInsight {
   title: string;
   summary: string;
   recommendations: string[];
-  category: 'Fokus Belajar' | 'Peningkatan Nilai' | 'Pengelolaan Waktu' | 'Literasi';
+  category: 'Fokus Belajar' | 'Peningkatan Nilai' | 'Pengelolaan Waktu' | 'Literasi' | string;
   scoreImprovement?: string;
 }
 

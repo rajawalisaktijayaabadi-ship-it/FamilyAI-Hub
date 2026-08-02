@@ -9,6 +9,8 @@ export interface Child {
   school: string;
   grade: string;
   bloodType: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
+  heightCm?: number;
+  weightKg?: number;
   allergies: string[];
   hobbies: string[];
   interests: string[];

@@ -26,6 +26,7 @@ import { AISmartHomeModal } from './components/AISmartHomeModal';
 import { SmartHomeReportsModal } from './components/SmartHomeReportsModal';
 
 import { useSecurityStore } from '../../stores/useSecurityStore';
+import { ScrollableTabNav } from '../../components/common/ScrollableTabNav';
 
 export type SmartHomeTab = 'dashboard' | 'devices' | 'rooms' | 'automation' | 'energy' | 'security' | 'presence' | 'maintenance';
 
@@ -79,104 +80,104 @@ export const SmartHomeCenterModule: React.FC = () => {
       </div>
 
       {/* Main Feature Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 border-b border-slate-800/80">
-        
-        <button
-          onClick={() => setActiveTab('dashboard')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            activeTab === 'dashboard'
-              ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
-          }`}
-        >
-          <Home className="w-4 h-4" />
-          <span>Dashboard Status</span>
-        </button>
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2 shadow-lg">
+        <ScrollableTabNav>
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 border ${
+              activeTab === 'dashboard'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+            }`}
+          >
+            <Home className="w-4 h-4" />
+            <span>Dashboard Status</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('devices')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            activeTab === 'devices'
-              ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
-          }`}
-        >
-          <Lightbulb className="w-4 h-4" />
-          <span>Perangkat IoT</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('devices')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 border ${
+              activeTab === 'devices'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+            }`}
+          >
+            <Lightbulb className="w-4 h-4" />
+            <span>Perangkat IoT</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('rooms')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            activeTab === 'rooms'
-              ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>Zona Ruangan</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('rooms')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 border ${
+              activeTab === 'rooms'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Zona Ruangan</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('automation')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            activeTab === 'automation'
-              ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
-          }`}
-        >
-          <Play className="w-4 h-4" />
-          <span>Otomasi & Rule Builder</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('automation')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 border ${
+              activeTab === 'automation'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+            }`}
+          >
+            <Play className="w-4 h-4" />
+            <span>Otomasi & Rule Builder</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('energy')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            activeTab === 'energy'
-              ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg font-black'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
-          }`}
-        >
-          <Zap className="w-4 h-4 text-amber-400" />
-          <span>Efisiensi Listrik</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('energy')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 border ${
+              activeTab === 'energy'
+                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg font-black'
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+            }`}
+          >
+            <Zap className="w-4 h-4 text-amber-400" />
+            <span>Efisiensi Listrik</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('security')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            activeTab === 'security'
-              ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
-          }`}
-        >
-          <ShieldCheck className="w-4 h-4" />
-          <span>Keamanan & CCTV</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 border ${
+              activeTab === 'security'
+                ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg'
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Keamanan & CCTV</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('presence')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            activeTab === 'presence'
-              ? 'bg-purple-600 text-white border-purple-500 shadow-lg'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>Presensi Anggota</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('presence')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 border ${
+              activeTab === 'presence'
+                ? 'bg-purple-600 text-white border-purple-500 shadow-lg'
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Presensi Anggota</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('maintenance')}
-          className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap border ${
-            activeTab === 'maintenance'
-              ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
-          }`}
-        >
-          <Wrench className="w-4 h-4" />
-          <span>Perawatan Perangkat</span>
-        </button>
-
+          <button
+            onClick={() => setActiveTab('maintenance')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 border ${
+              activeTab === 'maintenance'
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg'
+                : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-white'
+            }`}
+          >
+            <Wrench className="w-4 h-4" />
+            <span>Perawatan Perangkat</span>
+          </button>
+        </ScrollableTabNav>
       </div>
 
       {/* Render Selected Feature Tab */}

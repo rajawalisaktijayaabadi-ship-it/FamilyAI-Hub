@@ -117,7 +117,7 @@ export const PolicyManagementTab: React.FC<PolicyManagementTabProps> = ({ family
     setPremiumAmount(p.premiumAmount);
     setPaymentFrequency(p.paymentFrequency);
     setCoverageLimit(p.coverageLimit);
-    setBenefitsInput(p.benefits.join(', '));
+    setBenefitsInput(p.benefits?.join(', ') || '');
     setNotes(p.notes || '');
     setShowModal(true);
   };

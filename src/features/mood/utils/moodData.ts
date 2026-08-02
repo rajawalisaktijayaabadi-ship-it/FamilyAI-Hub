@@ -112,6 +112,14 @@ export const MOOD_META_MAP: Record<SupportedMoodType, MoodMeta> = {
     color: 'text-cyan-400 border-cyan-500/40 bg-cyan-500/10',
     bgGlow: 'from-cyan-500/20 to-blue-600/10',
     category: 'neutral'
+  },
+  energetic: {
+    type: 'energetic',
+    label: 'Enerjik / Semangat',
+    emoji: '🏀',
+    color: 'text-amber-400 border-amber-500/40 bg-amber-500/10',
+    bgGlow: 'from-amber-500/20 to-orange-600/10',
+    category: 'energy'
   }
 };
 
@@ -128,10 +136,10 @@ export const INITIAL_WELLBEING_SCORE: WellbeingScore = {
 
 export const INITIAL_FAMILY_MOODS: FamilyMemberMood[] = [
   {
-    memberId: 'mem_1',
+    memberId: 'm1',
     memberName: 'Budi Santoso',
     detailedRole: 'Ayah',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
     currentMood: 'grateful',
     moodLabel: 'Bersyukur & Tenang',
     emoji: '😍',
@@ -143,10 +151,10 @@ export const INITIAL_FAMILY_MOODS: FamilyMemberMood[] = [
     privacySetting: 'family_only'
   },
   {
-    memberId: 'mem_2',
+    memberId: 'm2',
     memberName: 'Siti Rahma',
     detailedRole: 'Ibu',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
     currentMood: 'excited',
     moodLabel: 'Semangat & Bahagia',
     emoji: '🥳',
@@ -158,33 +166,33 @@ export const INITIAL_FAMILY_MOODS: FamilyMemberMood[] = [
     privacySetting: 'family_only'
   },
   {
-    memberId: 'mem_3',
-    memberName: 'Rizky Santoso',
-    detailedRole: 'Anak (Sulung)',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-    currentMood: 'anxious',
-    moodLabel: 'Cemas Ujian Matematika',
-    emoji: '😰',
-    energyLevel: 6,
-    stressLevel: 7,
-    statusBadge: 'Need Support',
-    lastCheckIn: '2 jam yang lalu',
-    todayNote: 'Besok ada ujian Matematika semester, butuh bimbingan Ayah.',
-    privacySetting: 'parent_only'
+    memberId: 'm3',
+    memberName: 'Ahmad Santoso',
+    detailedRole: 'Anak Pertama (SMA)',
+    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
+    currentMood: 'energetic',
+    moodLabel: 'Semangat Latihan Basket',
+    emoji: '🏀',
+    energyLevel: 9,
+    stressLevel: 3,
+    statusBadge: 'Energetic',
+    lastCheckIn: '25 menit yang lalu',
+    todayNote: 'Tim basket sekolah menang latihan tanding sore ini!',
+    privacySetting: 'family_only'
   },
   {
-    memberId: 'mem_4',
-    memberName: 'Nenek Aminah',
-    detailedRole: 'Nenek',
-    avatar: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150',
-    currentMood: 'calm',
-    moodLabel: 'Tenang & Nyaman',
-    emoji: '🙂',
-    energyLevel: 7,
-    stressLevel: 1,
-    statusBadge: 'Calm',
-    lastCheckIn: '3 jam yang lalu',
-    todayNote: 'Jalan santai di taman depan rumah terasa menyegarkan.',
+    memberId: 'm4',
+    memberName: 'Nayla Santoso',
+    detailedRole: 'Anak Kedua (SD)',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
+    currentMood: 'happy',
+    moodLabel: 'Gembira Les Piano',
+    emoji: '🎹',
+    energyLevel: 8,
+    stressLevel: 2,
+    statusBadge: 'Happy',
+    lastCheckIn: '1 jam yang lalu',
+    todayNote: 'Berhasil memainkan lagu kesukaan tanpa salah nada.',
     privacySetting: 'family_only'
   }
 ];
@@ -268,12 +276,12 @@ export const INITIAL_RECOMMENDATIONS: MoodRecommendation[] = [
 export const INITIAL_JOURNALS: MoodJournal[] = [
   {
     id: 'j_1',
-    memberId: 'mem_1',
+    memberId: 'm1',
     memberName: 'Budi Santoso',
     memberRole: 'Ayah',
-    memberAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    memberAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
     title: 'Rasa Syukur Pekerjaan & Kebersamaan Pagi',
-    content: 'Pagi ini sempat sarapan pancake hangat buatan Ibu dan mengantar Rizky sekolah. Rasanya sangat berharga karena pekerjaan kantor minggu ini terasa lebih tertata.',
+    content: 'Pagi ini sempat sarapan pancake hangat buatan Ibu dan mengantar Ahmad sekolah. Rasanya sangat berharga karena pekerjaan kantor minggu ini terasa lebih tertata.',
     mood: 'grateful',
     tags: ['Keluarga', 'Sarapan', 'Bersyukur', 'Kantor'],
     date: '2026-07-31',
@@ -284,10 +292,10 @@ export const INITIAL_JOURNALS: MoodJournal[] = [
   },
   {
     id: 'j_2',
-    memberId: 'mem_2',
+    memberId: 'm2',
     memberName: 'Siti Rahma',
     memberRole: 'Ibu',
-    memberAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+    memberAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
     title: 'Resep Baru & Senyuman Keluarga',
     content: 'Mencoba resep sup iga baru dan seluruh porsi habis disantap. Melihat tawa keluarga saat makan siang menghilangkan rasa lelah memasak.',
     mood: 'excited',
@@ -303,10 +311,10 @@ export const INITIAL_JOURNALS: MoodJournal[] = [
 export const INITIAL_CHECKINS: DailyCheckIn[] = [
   {
     id: 'chk_1',
-    memberId: 'mem_1',
+    memberId: 'm1',
     memberName: 'Budi Santoso',
     memberRole: 'Ayah',
-    memberAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    memberAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
     date: '2026-07-31',
     timestamp: '19:30',
     mood: 'grateful',

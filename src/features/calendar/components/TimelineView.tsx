@@ -1,7 +1,7 @@
 import React from 'react';
 import { CalendarEvent } from '../types/calendarTypes';
 import { useCalendarStore } from '../stores/useCalendarStore';
-import { initialFamilyMembers } from '../../../data/mockData';
+import { useFamilyStore } from '../../../store/useFamilyStore';
 import { User, Clock } from 'lucide-react';
 
 interface TimelineViewProps {
@@ -10,6 +10,7 @@ interface TimelineViewProps {
 
 export const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
   const { selectedDate, openEditEventModal } = useCalendarStore();
+  const { familyMembers } = useFamilyStore();
 
   const hours = Array.from({ length: 14 }, (_, i) => i + 8); // 08:00 to 21:00
 
@@ -35,7 +36,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
         </div>
 
         {/* Member Timeline Rows */}
-        {initialFamilyMembers.map((member) => {
+        {familyMembers.map((member) => {
           const memberEvents = events.filter(
             e => e.startDate === selectedDate && e.assignedMemberIds.includes(member.id)
           );

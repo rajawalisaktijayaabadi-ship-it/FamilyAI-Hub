@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Baby, 
@@ -15,7 +15,9 @@ import {
 } from 'lucide-react';
 
 import { useParentingStore } from '../../store/useParentingStore';
+import { useFamilyStore } from '../../store/useFamilyStore';
 import { ParentingHeader, ChildSelector } from './components/ParentingHeader';
+import { ScrollableTabNav } from '../../components/common/ScrollableTabNav';
 
 import { DashboardTab } from './components/DashboardTab';
 import { ChildProfileTab } from './components/ChildProfileTab';
@@ -48,6 +50,7 @@ export type ParentingTabKey =
 
 export const ParentingCenterModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ParentingTabKey>('dashboard');
+  const { familyMembers } = useFamilyStore();
 
   const {
     children,
@@ -84,6 +87,51 @@ export const ParentingCenterModule: React.FC = () => {
     insights
   } = useParentingStore();
 
+  // Auto-sync children from useFamilyStore into useParentingStore
+  useEffect(() => {
+    if (!familyMembers || familyMembers.length === 0) return;
+
+    // Filter family members who are children
+    const childMembers = familyMembers.filter((m) => {
+      const r = (m.role || '').toLowerCase();
+      const rel = (m.relationship || '').toLowerCase();
+      const rt = (m.roleTitle || '').toLowerCase();
+      return r === 'kids' || r === 'child' || rel.includes('anak') || rt.includes('anak');
+    });
+
+    childMembers.forEach((m) => {
+      const existing = children.find((c) => c.id === m.id || c.name.toLowerCase() === m.name.toLowerCase());
+      if (!existing) {
+        addChild({
+          familyId: 'fam-1',
+          name: m.name,
+          photo: m.avatar,
+          birthDate: m.age ? `${2026 - m.age}-01-01` : '2016-01-01',
+          age: m.age || 10,
+          gender: m.relationship?.toLowerCase().includes('perempuan') ? 'Perempuan' : 'Laki-laki',
+          school: 'Sekolah Utama',
+          grade: m.roleTitle || 'Siswa',
+          bloodType: 'O+',
+          allergies: [],
+          hobbies: [],
+          interests: [],
+          talents: [],
+          goals: [],
+          parentNotes: ''
+        });
+      } else {
+        // Sync name/photo/age if changed
+        if (existing.name !== m.name || existing.photo !== m.avatar || existing.age !== m.age) {
+          updateChild(existing.id, {
+            name: m.name,
+            photo: m.avatar,
+            age: m.age || existing.age
+          });
+        }
+      }
+    });
+  }, [familyMembers]);
+
   const selectedChild = children.find((c) => c.id === selectedChildId) || children[0];
   const childRewardSystem = rewards[selectedChildId] || Object.values(rewards)[0];
   const childInsight = insights.find((i) => i.childId === selectedChildId) || insights[0];
@@ -117,25 +165,27 @@ export const ParentingCenterModule: React.FC = () => {
       />
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {navigationTabs.map((tab) => {
-          const IconComp = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all border shrink-0 ${
-                isActive
-                  ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400/50 shadow-lg shadow-pink-500/20'
-                  : 'bg-slate-900/90 text-slate-300 border-slate-800 hover:border-slate-700 hover:bg-slate-800/60'
-              }`}
-            >
-              <IconComp className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-lg">
+        <ScrollableTabNav>
+          {navigationTabs.map((tab) => {
+            const IconComp = tab.icon;
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all border shrink-0 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white border-pink-400/50 shadow-lg shadow-pink-500/20'
+                    : 'bg-slate-900/90 text-slate-300 border-slate-800 hover:border-slate-700 hover:bg-slate-800/60'
+                }`}
+              >
+                <IconComp className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </ScrollableTabNav>
       </div>
 
       {/* Active Tab View Rendering */}

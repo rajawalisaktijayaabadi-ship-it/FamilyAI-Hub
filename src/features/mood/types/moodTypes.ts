@@ -12,6 +12,7 @@ export type SupportedMoodType =
   | 'unwell'     // 🤒 Kurang Fit
   | 'grateful'   // 😍 Bersyukur
   | 'excited'    // 🥳 Semangat
+  | 'energetic'  // ⚡ Enerjik / Semangat
   | 'custom';    // Custom
 
 export interface MoodMeta {

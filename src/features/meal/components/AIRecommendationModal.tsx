@@ -49,41 +49,73 @@ export const AIRecommendationModal: React.FC<AIRecommendationModalProps> = ({ is
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      // Simulate Gemini AI latency with fallback
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      const response = await fetch('/api/ai/meal-planner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          availableIngredients: selectedIngredients,
+          dietaryPreferences: dietary,
+          mealType: 'Makan Siang',
+          familyMembersCount: 4
+        })
+      });
 
-      const isChickenSelected = selectedIngredients.some(i => i.toLowerCase().includes('ayam'));
-      const isEggSelected = selectedIngredients.some(i => i.toLowerCase().includes('telur'));
+      if (response.ok) {
+        const data = await response.json();
+        setGeneratedRecipe(data);
+      } else {
+        const isChickenSelected = selectedIngredients.some(i => i.toLowerCase().includes('ayam'));
+        const isEggSelected = selectedIngredients.some(i => i.toLowerCase().includes('telur'));
 
-      let newTitle = 'Sup Bening Sayur Pelangi & Bola Tahu';
-      if (isChickenSelected) {
-        newTitle = 'Ayam Tumis Brokoli Garlic Butter';
-      } else if (isEggSelected) {
-        newTitle = 'Omelet Sayur Wijen Fluffy Kid-Friendly';
+        let newTitle = 'Sup Bening Sayur Pelangi & Bola Tahu';
+        if (isChickenSelected) {
+          newTitle = 'Ayam Tumis Brokoli Garlic Butter';
+        } else if (isEggSelected) {
+          newTitle = 'Omelet Sayur Wijen Fluffy Kid-Friendly';
+        }
+
+        setGeneratedRecipe({
+          title: newTitle,
+          prepTime: '12 Menit',
+          cookTime: '18 Menit',
+          calories: '340 kcal/porsi',
+          category: 'Makan Siang',
+          difficulty: 'Mudah',
+          servings: 4,
+          ingredientsUsed: selectedIngredients.map(i => `${i} (Secukupnya)`),
+          missingIngredients: ['Garam Low Sodium', 'Lada Putih'],
+          steps: [
+            'Siapkan dan cuci bersih semua bahan yang disukai keluarga.',
+            'Tumis bumbu halus dasar dengan mentega / minyak zaitun hingga wangi.',
+            'Masukan bahan utama, aduk rata dan bumbui sesuai preferensi.',
+            'Sajikan hangat selagi segar bersama nasi merah atau putih organik.'
+          ],
+          kidTip: 'Ajak anak menghias piring saji dengan taburan biji wijen!',
+          seniorTip: 'Bumbu lembut rendah garam dan tanpa bahan pengawet.',
+          nutritionHighlight: 'Mengoptimalkan bahan kulkas tersedia tanpa ada yang terbuang (Zero Waste).'
+        });
       }
-
+    } catch (err) {
+      console.error(err);
       setGeneratedRecipe({
-        title: newTitle,
+        title: `Tumis Olahan ${selectedIngredients[0] || 'Kulkas'} Spesial Keluarga`,
         prepTime: '12 Menit',
-        cookTime: '18 Menit',
-        calories: '340 kcal/porsi',
+        cookTime: '15 Menit',
+        calories: '320 kcal/porsi',
         category: 'Makan Siang',
         difficulty: 'Mudah',
         servings: 4,
         ingredientsUsed: selectedIngredients.map(i => `${i} (Secukupnya)`),
-        missingIngredients: ['Garam Low Sodium', 'Lada Putih'],
+        missingIngredients: ['Bawang Putih', 'Garam', 'Minyak Zaitun'],
         steps: [
-          'Siapkan dan cuci bersih semua bahan yang disukai keluarga.',
-          'Tumis bumbu halus dasar dengan mentega / minyak zaitun hingga wangi.',
-          'Masukan bahan utama, aduk rata dan bumbui sesuai preferensi.',
-          'Sajikan hangat selagi segar bersama nasi merah atau putih organik.'
+          'Cuci bersih semua bahan yang terpilih dari kulkas.',
+          'Tumis bumbu dengan sedikit minyak zaitun sampai wangi.',
+          'Masukan bahan utama, masak hingga matang dan sajikan hangat.'
         ],
-        kidTip: 'Ajak anak menghias piring saji dengan taburan biji wijen!',
-        seniorTip: 'Bumbu lembut rendah garam dan tanpa bahan pengawet.',
-        nutritionHighlight: 'Mengoptimalkan bahan kulkas tersedia tanpa ada yang terbuang (Zero Waste).'
+        kidTip: 'Sajikan dengan potongan unik yang disukai anak.',
+        seniorTip: 'Pastikan tingkat kematangan pas untuk lansia.',
+        nutritionHighlight: 'Menu sehat alami berbahan segar dari stok kulkas.'
       });
-    } catch (err) {
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -95,13 +127,13 @@ export const AIRecommendationModal: React.FC<AIRecommendationModalProps> = ({ is
       id: `recipe-ai-${Date.now()}`,
       name: generatedRecipe.title,
       description: generatedRecipe.nutritionHighlight,
-      ingredients: generatedRecipe.ingredientsUsed.map((ing: string) => ({
+      ingredients: (generatedRecipe.ingredientsUsed || []).map((ing: string) => ({
         name: ing,
         quantity: '1',
         unit: 'porsi',
         inStock: true
       })),
-      steps: generatedRecipe.steps.map((st: string, idx: number) => ({
+      steps: (generatedRecipe.steps || []).map((st: string, idx: number) => ({
         stepNumber: idx + 1,
         instruction: st
       })),
@@ -280,10 +312,10 @@ export const AIRecommendationModal: React.FC<AIRecommendationModalProps> = ({ is
                     ))}
                   </ul>
 
-                  {generatedRecipe.missingIngredients?.length > 0 && (
+                  {(generatedRecipe.missingIngredients?.length || 0) > 0 && (
                     <div className="pt-2 border-t border-slate-800 text-[11px] text-amber-300 flex items-center gap-1">
                       <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      <span>Bumbu Tambahan: {generatedRecipe.missingIngredients.join(', ')}</span>
+                      <span>Bumbu Tambahan: {generatedRecipe.missingIngredients?.join(', ')}</span>
                     </div>
                   )}
                 </div>

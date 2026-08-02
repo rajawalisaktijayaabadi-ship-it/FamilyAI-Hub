@@ -79,7 +79,7 @@ export const AnalyticsReportTab: React.FC = () => {
           </h3>
 
           <div className="space-y-3">
-            {analytics.popularAlbums.map((alb) => (
+            {(analytics.popularAlbums || []).map((alb) => (
               <div key={alb.albumId} className="flex items-center justify-between p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs">
                 <div className="space-y-0.5">
                   <h4 className="font-bold text-white">{alb.name}</h4>

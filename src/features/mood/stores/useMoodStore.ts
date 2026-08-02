@@ -66,6 +66,7 @@ interface MoodState {
   deleteJournal: (id: string) => void;
   toggleReminder: (id: string) => void;
   updateMemberPrivacy: (memberId: string, privacy: PrivacyLevel) => void;
+  syncFamilyMembersWithMoods: (members: any[]) => void;
   
   // Helpers
   generateAIAdviceForMood: (mood: SupportedMoodType, note: string) => Promise<string>;
@@ -209,6 +210,44 @@ export const useMoodStore = create<MoodState>((set, get) => ({
     set((state) => ({
       familyMoods: state.familyMoods.map((m) => (m.memberId === memberId ? { ...m, privacySetting: privacy } : m))
     }));
+  },
+  
+  syncFamilyMembersWithMoods: (members) => {
+    if (!members || members.length === 0) return;
+    set((state) => {
+      const updatedMoods = [...state.familyMoods];
+      members.forEach((m) => {
+        const existingIdx = updatedMoods.findIndex(
+          (fm) => fm.memberId === m.id || fm.memberName.toLowerCase() === m.name.toLowerCase()
+        );
+        if (existingIdx !== -1) {
+          updatedMoods[existingIdx] = {
+            ...updatedMoods[existingIdx],
+            memberId: m.id,
+            memberName: m.name,
+            detailedRole: m.roleTitle || m.relationship || updatedMoods[existingIdx].detailedRole,
+            avatar: m.avatar || updatedMoods[existingIdx].avatar
+          };
+        } else {
+          updatedMoods.push({
+            memberId: m.id,
+            memberName: m.name,
+            detailedRole: m.roleTitle || m.relationship || 'Anggota Keluarga',
+            avatar: m.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+            currentMood: 'happy',
+            moodLabel: 'Tenang & Bahagia',
+            emoji: '😊',
+            energyLevel: 8,
+            stressLevel: 2,
+            statusBadge: 'Happy',
+            lastCheckIn: 'Baru saja',
+            todayNote: 'Aktif dalam aplikasi keluarga',
+            privacySetting: 'family_only'
+          });
+        }
+      });
+      return { familyMoods: updatedMoods };
+    });
   },
   
   getFilteredJournals: () => {

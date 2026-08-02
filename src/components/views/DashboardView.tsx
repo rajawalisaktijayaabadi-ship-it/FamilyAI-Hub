@@ -31,8 +31,10 @@ import { SmartCalendarDashboardCard } from '../../features/calendar/components/S
 import { FamilyMember, TaskItem, SmartDevice, MealPlanDay, ActiveTab } from '../../types';
 import { useFamilyStore } from '../../store/useFamilyStore';
 import { useAuth } from '../../contexts/AuthContext';
+import { useDummyDataStore, isDummyId } from '../../store/useDummyDataStore';
 
 interface DashboardViewProps {
+  currentMember?: FamilyMember;
   familyMembers?: FamilyMember[];
   tasks?: TaskItem[];
   onToggleTask?: (taskId: string) => void;
@@ -44,6 +46,7 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
+  currentMember,
   familyMembers: propsMembers,
   tasks = [],
   onToggleTask,
@@ -54,14 +57,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenSOS
 }) => {
   const { user } = useAuth();
+  const { hideDummyData } = useDummyDataStore();
   const { 
     familyMembers: storeMembers, 
     familyProfile, 
-    familyActivities, 
+    familyActivities: storeActivities, 
     setAddMemberOpen 
   } = useFamilyStore();
 
-  const members = propsMembers && propsMembers.length > 0 ? propsMembers : storeMembers;
+  const rawMembers = propsMembers && propsMembers.length > 0 ? propsMembers : storeMembers;
+  const members = hideDummyData ? rawMembers.filter(m => !isDummyId(m.id)) : rawMembers;
+
+  const activeMember = 
+    (currentMember && storeMembers.find(m => m.id === currentMember.id))
+    || currentMember
+    || storeMembers.find(m => m.relationship === 'Ayah' || m.detailedRole === 'Ayah' || m.name.toLowerCase().includes('budi')) 
+    || storeMembers[0] 
+    || members[0];
+  const displayTasks = hideDummyData ? tasks.filter(t => !isDummyId(t.id)) : tasks;
+  const displayDevices = hideDummyData ? smartDevices.filter(d => !isDummyId(d.id)) : smartDevices;
+  const displayActivities = hideDummyData ? storeActivities.filter(a => !isDummyId(a.id)) : storeActivities;
 
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
@@ -116,14 +131,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <img 
-              src={user?.photoURL || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'} 
-              alt={user?.displayName || 'User'} 
+              src={activeMember?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'} 
+              alt={activeMember?.name || 'User'} 
               className="w-16 h-16 rounded-2xl object-cover ring-2 ring-amber-400/80 shadow-lg"
             />
             <div className="space-y-1">
               <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/30 text-xs font-semibold">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>{greeting}, {user?.displayName || 'Budi Santoso'}</span>
+                <span>{greeting}, {activeMember?.name || 'Budi Santoso'}</span>
               </div>
               <h2 className="text-2xl lg:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
                 Selamat Datang di {familyProfile.familyName}
@@ -361,21 +376,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="space-y-3">
-            {familyActivities.slice(0, 5).map((act) => (
-              <div key={act.id} className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/80 flex items-center gap-3">
-                <img src={act.actorAvatar} alt={act.actorName} className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-500/40" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-white">{act.actorName}</span>
-                    <span className="text-slate-400 text-[10px]">{act.timeAgo}</span>
+            {displayActivities.slice(0, 5).map((act) => {
+              const matchedMember = members.find(m => m.name === act.actorName || act.actorName.includes(m.name) || m.relationship === act.actorName);
+              const avatar = matchedMember ? matchedMember.avatar : act.actorAvatar;
+              return (
+                <div key={act.id} className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/80 flex items-center gap-3">
+                  <img src={avatar} alt={act.actorName} className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-500/40" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-white">{act.actorName}</span>
+                      <span className="text-slate-400 text-[10px]">{act.timeAgo}</span>
+                    </div>
+                    <p className="text-xs text-slate-300 truncate mt-0.5">{act.action}</p>
                   </div>
-                  <p className="text-xs text-slate-300 truncate mt-0.5">{act.action}</p>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 bg-slate-800 text-indigo-300 rounded-full">
+                    {act.category}
+                  </span>
                 </div>
-                <span className="text-[10px] font-semibold px-2 py-0.5 bg-slate-800 text-indigo-300 rounded-full">
-                  {act.category}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

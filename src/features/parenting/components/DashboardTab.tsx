@@ -112,7 +112,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
               </div>
               <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                 <span className="text-[10px] text-slate-400 block">Alergi</span>
-                <span className="font-bold text-amber-400 text-[11px] truncate block">{child.allergies.join(', ') || 'Tidak Ada'}</span>
+                <span className="font-bold text-amber-400 text-[11px] truncate block">{child.allergies?.join(', ') || 'Tidak Ada'}</span>
               </div>
               <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                 <span className="text-[10px] text-slate-400 block">Level Anak</span>

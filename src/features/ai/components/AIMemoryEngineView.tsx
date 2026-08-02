@@ -196,7 +196,7 @@ export const AIMemoryEngineView: React.FC = () => {
 
             <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
               <div className="flex items-center gap-1.5 flex-wrap">
-                {mem.tags.map((tag, idx) => (
+                {(mem.tags || []).map((tag, idx) => (
                   <span key={idx} className="text-[10px] bg-slate-900 text-slate-400 px-2 py-0.5 rounded-lg border border-slate-800">
                     #{tag}
                   </span>

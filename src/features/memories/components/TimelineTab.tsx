@@ -106,7 +106,7 @@ export const TimelineTab: React.FC<TimelineTabProps> = ({ onOpenAddEventModal })
                   <p className="text-xs text-slate-300 leading-relaxed">{item.description}</p>
 
                   <div className="pt-2 flex flex-wrap gap-1.5">
-                    {item.taggedMemberIds.map(mem => (
+                    {(item.taggedMemberIds || []).map(mem => (
                       <span key={mem} className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-950 text-amber-300 border border-slate-800 font-semibold flex items-center gap-1">
                         <User className="w-2.5 h-2.5 text-amber-400" /> {mem}
                       </span>

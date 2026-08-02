@@ -15,6 +15,7 @@ import {
   FileText
 } from 'lucide-react';
 import { FinanceHeader } from './components/FinanceHeader';
+import { ScrollableTabNav } from '../../components/common/ScrollableTabNav';
 import { FinanceDashboardTab } from './components/FinanceDashboardTab';
 import { FinancialProfileTab } from './components/FinancialProfileTab';
 import { IncomeManagementTab } from './components/IncomeManagementTab';
@@ -79,8 +80,8 @@ export const FinanceCenterModule: React.FC<FinanceCenterModuleProps> = ({ family
       />
 
       {/* Navigation Sub-Tabs Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-2.5 overflow-x-auto no-scrollbar">
-        <div className="flex items-center gap-1.5 min-w-max">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-2.5">
+        <ScrollableTabNav>
           {tabs.map((tab) => {
             const IconComponent = tab.icon;
             const isActive = activeTab === tab.id;
@@ -89,7 +90,7 @@ export const FinanceCenterModule: React.FC<FinanceCenterModuleProps> = ({ family
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 ${
+                className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
                   isActive
                     ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md scale-105'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -100,7 +101,7 @@ export const FinanceCenterModule: React.FC<FinanceCenterModuleProps> = ({ family
               </button>
             );
           })}
-        </div>
+        </ScrollableTabNav>
       </div>
 
       {/* Main Tab Content Render */}

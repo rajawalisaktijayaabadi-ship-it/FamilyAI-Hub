@@ -296,7 +296,7 @@ export const ShoppingDashboard: React.FC<ShoppingDashboardProps> = ({
               <span>Ringkasan Anggaran Belanja</span>
             </h3>
             <div className="space-y-2 text-xs">
-              {budget.categoryBudgets.map((cat, idx) => (
+              {(budget?.categoryBudgets || []).map((cat, idx) => (
                 <div key={idx} className="space-y-1">
                   <div className="flex justify-between text-slate-300">
                     <span>{cat.categoryName}</span>

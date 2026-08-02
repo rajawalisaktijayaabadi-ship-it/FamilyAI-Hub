@@ -222,7 +222,7 @@ export const HealthDashboardTab: React.FC<HealthDashboardTabProps> = ({
                             </span>
                           </div>
                           <p className="text-xs text-slate-400">
-                            Aturan: <strong className="text-rose-300">{med.frequency}</strong> • Jam: {med.timesOfDay.join(', ') || 'Sesuai Kebutuhan'}
+                            Aturan: <strong className="text-rose-300">{med.frequency}</strong> • Jam: {med.timesOfDay?.join(', ') || 'Sesuai Kebutuhan'}
                           </p>
                           <p className="text-[11px] text-slate-500">
                             Pasien: <strong className="text-slate-300">{memberObj?.name}</strong> • Sisa stok: {med.remainingPills ?? 15} pill

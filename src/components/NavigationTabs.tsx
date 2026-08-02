@@ -24,13 +24,19 @@ import {
   ChevronRight,
   Menu,
   X,
-  Search
+  Search,
+  Lock,
+  Eye,
+  Shield,
+  User
 } from 'lucide-react';
-import { ActiveTab } from '../types';
+import { ActiveTab, FamilyMember } from '../types';
+import { getRoleAllowedTabs, getRoleBadgeInfo } from '../utils/rolePermissions';
 
 interface NavigationTabsProps {
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
+  currentMember?: FamilyMember;
 }
 
 export const tabItems: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: string; category: string }[] = [
@@ -70,14 +76,24 @@ export const tabItems: { id: ActiveTab; label: string; icon: React.ReactNode; ba
 
 const categories = ['Utama', 'Mental & Edu', 'Proteksi & Fin', 'Rumah & Gaya Hidup', 'Komunikasi', 'Manajemen'];
 
-export const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTabChange }) => {
+export const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTabChange, currentMember }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAllMenus, setShowAllMenus] = useState(false);
 
-  const filteredItems = tabItems.filter((item) =>
-    item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const allowedTabs = getRoleAllowedTabs(currentMember);
+  const roleInfo = getRoleBadgeInfo(currentMember);
+
+  // Filter items by allowed tabs (unless showAllMenus is true) AND search term
+  const visibleItems = tabItems.filter((item) => {
+    const matchesSearch = 
+      item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    if (showAllMenus) return true;
+    return allowedTabs.includes(item.id);
+  });
 
   const activeItemObj = tabItems.find(i => i.id === activeTab);
 
@@ -109,6 +125,49 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTab
           ${mobileOpen ? 'block' : 'hidden md:flex'}
         `}
       >
+        {/* Active Role Status & Permissions Banner */}
+        <div className="p-3 border-b border-slate-800/80 bg-slate-950/60">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-2 min-w-0">
+              {currentMember ? (
+                <img 
+                  src={currentMember.avatar} 
+                  alt={currentMember.name} 
+                  className="w-7 h-7 rounded-full object-cover ring-2 ring-indigo-500/50 shrink-0" 
+                />
+              ) : (
+                <Shield className="w-4 h-4 text-indigo-400 shrink-0" />
+              )}
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-slate-200 truncate">
+                  {currentMember ? currentMember.name : 'Profil Pengguna'}
+                </div>
+                <div className="text-[10px] text-slate-400 truncate">
+                  {currentMember ? currentMember.roleTitle : 'Orang Tua'}
+                </div>
+              </div>
+            </div>
+
+            <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold border uppercase shrink-0 ${roleInfo.color}`}>
+              {roleInfo.badge}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between text-[10px] text-slate-400 mt-2 bg-slate-900/80 px-2.5 py-1.5 rounded-xl border border-slate-800">
+            <span className="truncate">
+              Akses: <strong className="text-indigo-300">{allowedTabs.length}</strong> / {tabItems.length} Modul
+            </span>
+            <button
+              onClick={() => setShowAllMenus(!showAllMenus)}
+              className="text-indigo-400 hover:text-indigo-300 font-semibold underline flex items-center gap-1 shrink-0 ml-1"
+              title={showAllMenus ? 'Sembunyikan menu yang tidak diizinkan untuk role ini' : 'Tampilkan semua menu (Lihat status terkunci)'}
+            >
+              {showAllMenus ? <Eye className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+              <span>{showAllMenus ? 'Dibatasi' : 'Semua'}</span>
+            </button>
+          </div>
+        </div>
+
         {/* Sidebar Header & Search Filter */}
         <div className="p-3.5 border-b border-slate-800/80 space-y-2.5">
           <div className="flex items-center justify-between">
@@ -116,7 +175,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTab
               Menu Navigasi
             </span>
             <span className="text-[10px] font-semibold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
-              {tabItems.length} Modul
+              {visibleItems.length} Modul
             </span>
           </div>
 
@@ -141,9 +200,9 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTab
         </div>
 
         {/* Sidebar Navigation Items (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-2.5 space-y-4 max-h-[calc(100vh-140px)] md:max-h-none custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-4 max-h-[calc(100vh-220px)] md:max-h-none custom-scrollbar">
           {categories.map((cat) => {
-            const itemsInCat = filteredItems.filter((item) => item.category === cat);
+            const itemsInCat = visibleItems.filter((item) => item.category === cat);
             if (itemsInCat.length === 0) return null;
 
             return (
@@ -156,6 +215,8 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTab
                 <div className="space-y-0.5">
                   {itemsInCat.map((item) => {
                     const isActive = activeTab === item.id;
+                    const isAllowed = allowedTabs.includes(item.id);
+
                     return (
                       <button
                         key={item.id}
@@ -167,7 +228,9 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTab
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all group text-left ${
                           isActive
                             ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/20 ring-1 ring-indigo-400/30'
-                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                            : isAllowed
+                              ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                              : 'text-slate-500 hover:bg-slate-900 opacity-60'
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -178,7 +241,13 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTab
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0 ml-1">
-                          {item.badge && (
+                          {!isAllowed && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-950/80 text-rose-400 border border-rose-800/40 flex items-center gap-0.5" title="Menu ini dibatasi untuk role aktif">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>Dibatasi</span>
+                            </span>
+                          )}
+                          {isAllowed && item.badge && (
                             <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase ${
                               isActive
                                 ? 'bg-amber-400 text-slate-950 shadow-sm'
@@ -204,10 +273,11 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({ activeTab, onTab
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             <span className="font-medium text-slate-300">System Ready</span>
           </div>
-          <span className="text-[10px] text-indigo-400 font-bold">FamilyAI v2.5</span>
+          <span className="text-[10px] text-indigo-400 font-bold">Role: {roleInfo.name.split(' ')[0]}</span>
         </div>
       </aside>
     </>
   );
 };
+
 

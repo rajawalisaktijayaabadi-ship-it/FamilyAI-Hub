@@ -68,6 +68,7 @@ interface EducationStoreState {
   updateSkillLevel: (id: string, level: SkillDevelopment['level'], progressPercent: number) => void;
 
   // Quiz actions
+  addQuiz: (quiz: Omit<Quiz, 'id'>) => void;
   addQuizResult: (result: Omit<QuizResult, 'id' | 'date'>) => void;
 
   // Certificate actions
@@ -81,40 +82,139 @@ interface EducationStoreState {
   getParentSummary: (childId: string) => ParentEducationSummary;
 }
 
-// Initial Mock Data for Child 1 (Arsa - SD Kelas 5) & Child 2 (Bening - TK B)
+// Initial Mock Data for Family Children: m3 (Ahmad Santoso - SMA Kelas 2) & m4 (Nayla Santoso - SD Kelas 5)
 const mockProfiles: Record<string, EducationProfile> = {
+  'm3': {
+    id: 'edprof-m3',
+    childId: 'm3',
+    schoolName: 'SMA Negeri 8 Jakarta',
+    grade: 'SMA Kelas 2 (IPA)',
+    semester: 'Semester 1 (2026/2027)',
+    nisn: '0081234567',
+    homeroomTeacher: 'Bpk. Drs. Sugiarto, M.Pd.',
+    favoriteSubjects: ['Matematika Lanjut', 'Fisika', 'Pemrograman Python', 'Bahasa Inggris TOEFL'],
+    extracurriculars: ['Tim Basket Utama SMA 8', 'Klub Robotik & AI', 'OSIS Bidang Pendidikan'],
+    academicGoals: ['Juara Basket Antar SMA Se-DKI', 'Lolos UTBK SNBT ITB / UI Score ≥ 720', 'Sertifikat TOEFL Score ≥ 550'],
+    specialNotes: 'Ahmad berkarakter mandiri, analitis, dan berbakat tinggi dalam logika matematika, koding Python, serta kepemimpinan tim.'
+  },
+  'm4': {
+    id: 'edprof-m4',
+    childId: 'm4',
+    schoolName: 'SD Nusantara Utama Jakarta',
+    grade: 'SD Kelas 5',
+    semester: 'Semester 1 (2026/2027)',
+    nisn: '0129384756',
+    homeroomTeacher: 'Ibu Ningsih, S.Pd.',
+    favoriteSubjects: ['Seni Musik & Piano', 'Matematika', 'IPA', 'Bahasa Indonesia'],
+    extracurriculars: ['Sanggar Piano Cilik', 'Klub Balet & Seni Tari', 'Pramuka Penggalang'],
+    academicGoals: ['Juara 1 Lomba Piano Anak Tingkat Provinsi', 'Nilai Rata-Rata Rapor ≥ 92', 'Membaca 12 Buku Cerita Edukasi'],
+    specialNotes: 'Nayla sangat kreatif, memiliki pendengaran musik tajam (absolute pitch), dan tekun belajar melalui visual & nada lagu.'
+  },
   'child-1': {
     id: 'edprof-1',
     childId: 'child-1',
-    schoolName: 'SD Nusantara Utama Jakarta',
-    grade: 'Kelas 5 SD',
+    schoolName: 'SMA Negeri 8 Jakarta',
+    grade: 'SMA Kelas 2 (IPA)',
     semester: 'Semester 1 (2026/2027)',
-    nisn: '0129384756',
-    homeroomTeacher: 'Bpk. Hendra Wijaya, S.Pd.',
-    favoriteSubjects: ['Matematika', 'Komputer', 'IPA'],
-    extracurriculars: ['Klub Catur Sekolah', 'Pramuka', 'Robotics Club'],
-    academicGoals: ['Juara 1 Olimpiade Sains Matematika SD', 'Nilai Rata-Rata Rapor ≥ 92', 'Membaca 12 Buku Sains'],
-    specialNotes: 'Sangat tertarik pada konsep logika matematika dan pemrograman Scratch.'
+    nisn: '0081234567',
+    homeroomTeacher: 'Bpk. Drs. Sugiarto, M.Pd.',
+    favoriteSubjects: ['Matematika Lanjut', 'Fisika', 'Pemrograman Python'],
+    extracurriculars: ['Tim Basket Utama', 'Klub Robotik'],
+    academicGoals: ['Nilai Rata-Rata Rapor ≥ 90', 'Lolos UTBK SNBT'],
+    specialNotes: 'Anak mandiri dan disiplin dalam jadwal belajar.'
   },
   'child-2': {
     id: 'edprof-2',
     childId: 'child-2',
-    schoolName: 'TK Permata Hati',
-    grade: 'TK B',
+    schoolName: 'SD Nusantara Utama Jakarta',
+    grade: 'SD Kelas 5',
     semester: 'Semester 1 (2026/2027)',
-    homeroomTeacher: 'Ibu Ratna Dewi, S.Pd.',
-    favoriteSubjects: ['Seni & Mewarnai', 'Bahasa & Dongeng', 'Musik'],
-    extracurriculars: ['Seni Balet Cilik', 'Sanggar Gambar'],
-    academicGoals: ['Lancar Membaca Dongeng Kalimat Pendek', 'Mengenal Angka Penjumlahan 1-20'],
-    specialNotes: 'Belajar paling efektif melalui visual gambar dan nyanyian lagu interaktif.'
+    homeroomTeacher: 'Ibu Ningsih, S.Pd.',
+    favoriteSubjects: ['Seni & Piano', 'IPA'],
+    extracurriculars: ['Sanggar Piano'],
+    academicGoals: ['Nilai Rapor ≥ 90'],
+    specialNotes: 'Anak ceria dan sangat suka seni musik.'
   }
 };
 
 const mockSubjects: Subject[] = [
+  // Ahmad Santoso (m3) - SMA Kelas 2
   {
-    id: 'subj-1',
-    childId: 'child-1',
-    name: 'Matematika & Logika',
+    id: 'subj-m3-1',
+    childId: 'm3',
+    name: 'Matematika Lanjut (Kalkulus & Trigonometri)',
+    category: 'Matematika',
+    teacherName: 'Bpk. Drs. Sugiarto, M.Pd.',
+    teacherContact: '+62 812-9988-7766',
+    targetGrade: 95,
+    currentGrade: 94,
+    iconName: 'Calculator',
+    scheduleDays: ['Senin', 'Rabu', 'Jumat'],
+    attendanceRate: 98,
+    notes: 'Pemahaman konsep limit fungsi, turunan, dan vektor sangat baik.'
+  },
+  {
+    id: 'subj-m3-2',
+    childId: 'm3',
+    name: 'Fisika & Termodinamika',
+    category: 'IPA',
+    teacherName: 'Ibu Dr. Maya Kartika',
+    teacherContact: '+62 813-7766-5544',
+    targetGrade: 92,
+    currentGrade: 90,
+    iconName: 'FlaskConical',
+    scheduleDays: ['Selasa', 'Kamis'],
+    attendanceRate: 100,
+    notes: 'Sangat menguasai hukum Termodinamika & Gelombang Elektromagnetik.'
+  },
+  {
+    id: 'subj-m3-3',
+    childId: 'm3',
+    name: 'Pemrograman Python & AI Fundamentals',
+    category: 'Coding',
+    teacherName: 'Bpk. Rian Pratama, M.Kom.',
+    teacherContact: '+62 815-6677-8899',
+    targetGrade: 98,
+    currentGrade: 96,
+    iconName: 'Code',
+    scheduleDays: ['Rabu'],
+    attendanceRate: 100,
+    notes: 'Telah berhasil membuat algoritma prediksi sederhana menggunakan Python.'
+  },
+  {
+    id: 'subj-m3-4',
+    childId: 'm3',
+    name: 'Bahasa Inggris TOEFL & Debate',
+    category: 'Bahasa Inggris',
+    teacherName: 'Ms. Deborah Vance',
+    teacherContact: '+62 811-2233-4455',
+    targetGrade: 95,
+    currentGrade: 92,
+    iconName: 'Globe',
+    scheduleDays: ['Selasa', 'Jumat'],
+    attendanceRate: 96,
+    notes: 'Kelancaran debat dan kosa kata akademis tingkat tinggi.'
+  },
+  {
+    id: 'subj-m3-5',
+    childId: 'm3',
+    name: 'Kimia Organik & Stoikiometri',
+    category: 'IPA',
+    teacherName: 'Ibu Ratna Suminar, S.Si.',
+    teacherContact: '+62 817-4433-2211',
+    targetGrade: 90,
+    currentGrade: 88,
+    iconName: 'FlaskConical',
+    scheduleDays: ['Senin', 'Kamis'],
+    attendanceRate: 95,
+    notes: 'Praktikum laju reaksi & tatanama senyawa berjalan lancar.'
+  },
+
+  // Nayla Santoso (m4) - SD Kelas 5
+  {
+    id: 'subj-m4-1',
+    childId: 'm4',
+    name: 'Matematika & Logika SD',
     category: 'Matematika',
     teacherName: 'Bpk. Hendra Wijaya, S.Pd.',
     teacherContact: '+62 812-3456-7890',
@@ -123,12 +223,12 @@ const mockSubjects: Subject[] = [
     iconName: 'Calculator',
     scheduleDays: ['Senin', 'Rabu', 'Jumat'],
     attendanceRate: 98,
-    notes: 'Pemahaman materi pecahan & geometri bangun ruang sangat kuat.'
+    notes: 'Pemahaman operasi pecahan campuran & keliling bangun datar sangat kuat.'
   },
   {
-    id: 'subj-2',
-    childId: 'child-1',
-    name: 'Ilmu Pengetahuan Alam (IPA)',
+    id: 'subj-m4-2',
+    childId: 'm4',
+    name: 'IPA & Daur Ekosistem',
     category: 'IPA',
     teacherName: 'Ibu Diana Putri, M.Si.',
     teacherContact: '+62 813-9876-5432',
@@ -137,74 +237,62 @@ const mockSubjects: Subject[] = [
     iconName: 'FlaskConical',
     scheduleDays: ['Selasa', 'Kamis'],
     attendanceRate: 100,
-    notes: 'Sangat aktif bertanya saat praktikum ekosistem & tata surya.'
+    notes: 'Sangat aktif bertanya saat praktikum daur air & rantai makanan.'
   },
   {
-    id: 'subj-3',
-    childId: 'child-1',
-    name: 'Bahasa Inggris (English)',
-    category: 'Bahasa Inggris',
-    teacherName: 'Ms. Sarah Jenkins',
-    teacherContact: '+62 811-2233-4455',
-    targetGrade: 90,
-    currentGrade: 88,
-    iconName: 'Globe',
-    scheduleDays: ['Senin', 'Kamis'],
-    attendanceRate: 96,
-    notes: 'Grammar & Vocabulary bagus. Perlu latihan kelancaran percakapan oral.'
-  },
-  {
-    id: 'subj-4',
-    childId: 'child-1',
-    name: 'Komputer & Coding Scratch',
-    category: 'Coding',
-    teacherName: 'Bpk. Rian Pratama, S.Kom.',
-    teacherContact: '+62 815-6677-8899',
+    id: 'subj-m4-3',
+    childId: 'm4',
+    name: 'Seni Musik & Seni Piano',
+    category: 'Seni',
+    teacherName: 'Ibu Clara Natalia, S.Sn.',
+    teacherContact: '+62 819-0011-2233',
     targetGrade: 98,
-    currentGrade: 96,
-    iconName: 'Code',
-    scheduleDays: ['Rabu'],
+    currentGrade: 98,
+    iconName: 'BookOpen',
+    scheduleDays: ['Sabtu'],
     attendanceRate: 100,
-    notes: 'Telah berhasil menyelesaikan 3 proyek game mini Scratch.'
+    notes: 'Teknik fingering piano dan solfeggio bernyanyi sangat unggul.'
   },
   {
-    id: 'subj-5',
-    childId: 'child-1',
-    name: 'Bahasa Indonesia',
+    id: 'subj-m4-4',
+    childId: 'm4',
+    name: 'Bahasa Indonesia & Sastra',
     category: 'Bahasa Indonesia',
     teacherName: 'Ibu Ningsih, S.Pd.',
-    targetGrade: 90,
-    currentGrade: 87,
+    teacherContact: '+62 818-7766-5544',
+    targetGrade: 92,
+    currentGrade: 90,
     iconName: 'BookOpenText',
     scheduleDays: ['Selasa', 'Jumat'],
-    attendanceRate: 95,
-    notes: 'Menulis puisi & karangan narasi sudah baik.'
+    attendanceRate: 96,
+    notes: 'Penulisan karangan narasi dan pembacaan puisi sangat menyentuh.'
   }
 ];
 
 const mockHomeworks: Homework[] = [
+  // Ahmad Santoso (m3)
   {
-    id: 'hw-1',
-    childId: 'child-1',
-    subjectId: 'subj-1',
-    subjectName: 'Matematika & Logika',
-    title: 'Latihan Soal Pecahan Campuran & Desimal (Hal. 45-48)',
-    description: 'Selesaikan 10 soal cerita penjumlahan dan pengurangan pecahan campuran.',
-    dueDate: '2026-08-02',
-    dueTime: '18:00',
+    id: 'hw-m3-1',
+    childId: 'm3',
+    subjectId: 'subj-m3-1',
+    subjectName: 'Matematika Lanjut',
+    title: 'Latihan Soal Limit Fungsi Aljabar & Trigonometri (Hal. 78-82)',
+    description: 'Selesaikan 15 soal kalkulus limit fungsi dan buktikan dengan sifat-sifat turunan.',
+    dueDate: '2026-08-04',
+    dueTime: '20:00',
     priority: 'Tinggi',
     status: 'Sedang Dikerjakan',
     category: 'PR',
-    aiHelpCount: 2
+    aiHelpCount: 1
   },
   {
-    id: 'hw-2',
-    childId: 'child-1',
-    subjectId: 'subj-2',
-    subjectName: 'Ilmu Pengetahuan Alam (IPA)',
-    title: 'Laporan Praktikum Sederhana Daur Air & Rantai Makanan',
-    description: 'Tuliskan bagan skema daur air disertai penjelasan 3 tahap utama (Evaporasi, Kondensasi, Presipitasi).',
-    dueDate: '2026-08-04',
+    id: 'hw-m3-2',
+    childId: 'm3',
+    subjectId: 'subj-m3-2',
+    subjectName: 'Fisika & Termodinamika',
+    title: 'Laporan Praktikum Hukum Hooke & Pegas Paralel',
+    description: 'Buat grafik hubungan gaya terhadap pertambahan panjang pegas disertai analisis regresi linier.',
+    dueDate: '2026-08-06',
     dueTime: '19:00',
     priority: 'Sedang',
     status: 'Belum Dikerjakan',
@@ -212,179 +300,243 @@ const mockHomeworks: Homework[] = [
     aiHelpCount: 0
   },
   {
-    id: 'hw-3',
-    childId: 'child-1',
-    subjectId: 'subj-3',
-    subjectName: 'Bahasa Inggris (English)',
-    title: 'Reading Comprehension "Solar System Exploration"',
-    description: 'Jawab 5 pertanyaan esai berdasarkan teks bacaan tentang planet-planet.',
-    dueDate: '2026-07-30',
-    dueTime: '17:00',
-    priority: 'Rendah',
+    id: 'hw-m3-3',
+    childId: 'm3',
+    subjectId: 'subj-m3-4',
+    subjectName: 'Bahasa Inggris TOEFL',
+    title: 'Drill Exercise Reading Comprehension "Scientific Discoveries"',
+    description: 'Jawab 20 soal TOEFL Reading PBT mengenai sejarah penemuan antibiotik.',
+    dueDate: '2026-07-31',
+    dueTime: '18:00',
+    priority: 'Sedang',
     status: 'Selesai',
     category: 'Tugas Harian',
-    aiHelpCount: 1,
-    completedAt: '2026-07-30T16:20:00'
+    aiHelpCount: 2,
+    completedAt: '2026-07-31T17:30:00'
+  },
+
+  // Nayla Santoso (m4)
+  {
+    id: 'hw-m4-1',
+    childId: 'm4',
+    subjectId: 'subj-m4-1',
+    subjectName: 'Matematika & Logika SD',
+    title: 'Latihan Soal Pecahan Campuran & Desimal (Hal. 45-48)',
+    description: 'Selesaikan 10 soal cerita penjumlahan dan pengurangan pecahan campuran.',
+    dueDate: '2026-08-03',
+    dueTime: '18:00',
+    priority: 'Tinggi',
+    status: 'Sedang Dikerjakan',
+    category: 'PR',
+    aiHelpCount: 2
+  },
+  {
+    id: 'hw-m4-2',
+    childId: 'm4',
+    subjectId: 'subj-m4-2',
+    subjectName: 'IPA & Daur Ekosistem',
+    title: 'Bagan Skema Daur Air & Rantai Makanan Hutan',
+    description: 'Gambarkan 3 tahap utama daur air (Evaporasi, Kondensasi, Presipitasi) pada kertas gambar A4.',
+    dueDate: '2026-08-05',
+    dueTime: '19:00',
+    priority: 'Sedang',
+    status: 'Belum Dikerjakan',
+    category: 'Proyek',
+    aiHelpCount: 0
   }
 ];
 
 const mockStudyPlans: StudyPlan[] = [
+  // Ahmad Santoso (m3)
   {
-    id: 'sp-1',
-    childId: 'child-1',
-    title: 'Review Rumus Pecahan & Operasi Hitung Campuran',
+    id: 'sp-m3-1',
+    childId: 'm3',
+    title: 'Drill Soal Limit & Turunan Kalkulus',
     frequency: 'Harian',
-    targetDurationMinutes: 45,
-    subjectId: 'subj-1',
-    subjectName: 'Matematika',
-    timeOfDay: '16:00 - 16:45',
+    targetDurationMinutes: 50,
+    subjectId: 'subj-m3-1',
+    subjectName: 'Matematika Lanjut',
+    timeOfDay: '16:30 - 17:20',
     priority: 'Tinggi',
     completed: true
   },
   {
-    id: 'sp-2',
-    childId: 'child-1',
-    title: 'Membaca Bab Ekosistem & Latihan Kuis IPA',
-    frequency: 'Harian',
-    targetDurationMinutes: 30,
-    subjectId: 'subj-2',
-    subjectName: 'IPA',
-    timeOfDay: '19:00 - 19:30',
+    id: 'sp-m3-2',
+    childId: 'm3',
+    title: 'Latihan Coding Python Algorithm',
+    frequency: 'Mingguan',
+    targetDurationMinutes: 60,
+    subjectId: 'subj-m3-3',
+    subjectName: 'Pemrograman Python',
+    timeOfDay: 'Sabtu 10:00',
     priority: 'Sedang',
     completed: false
   },
+
+  // Nayla Santoso (m4)
   {
-    id: 'sp-3',
-    childId: 'child-1',
-    title: 'Latihan Koding Scratch: Variabel & Loop',
-    frequency: 'Mingguan',
-    targetDurationMinutes: 60,
-    subjectId: 'subj-4',
-    subjectName: 'Komputer & Coding',
-    timeOfDay: 'Sabtu 10:00',
+    id: 'sp-m4-1',
+    childId: 'm4',
+    title: 'Latihan Partitur Piano & Tangga Senada',
+    frequency: 'Harian',
+    targetDurationMinutes: 30,
+    subjectId: 'subj-m4-3',
+    subjectName: 'Seni Musik Piano',
+    timeOfDay: '16:00 - 16:30',
+    priority: 'Tinggi',
+    completed: true
+  },
+  {
+    id: 'sp-m4-2',
+    childId: 'm4',
+    title: 'Membaca Bab Ekosistem & Latihan Kuis IPA',
+    frequency: 'Harian',
+    targetDurationMinutes: 30,
+    subjectId: 'subj-m4-2',
+    subjectName: 'IPA',
+    timeOfDay: '19:00 - 19:30',
     priority: 'Sedang',
     completed: false
   }
 ];
 
 const mockExams: Exam[] = [
+  // Ahmad Santoso (m3)
   {
-    id: 'ex-1',
-    childId: 'child-1',
-    subjectId: 'subj-1',
-    subjectName: 'Matematika & Logika',
-    title: 'Ulangan Harian Bab 2: Pecahan & Persen',
+    id: 'ex-m3-1',
+    childId: 'm3',
+    subjectId: 'subj-m3-1',
+    subjectName: 'Matematika Lanjut',
+    title: 'UTS Semester 1: Kalkulus Limit & Turunan',
+    examType: 'UTS',
+    date: '2026-08-15',
+    time: '08:00 - 09:30',
+    targetGrade: 95,
+    topicsCovered: ['Limit Fungsi Aljabar', 'Turunan Pertama & Kedua', 'Aplikasi Turunan Maksimasi'],
+    status: 'Mendatang'
+  },
+  {
+    id: 'ex-m3-2',
+    childId: 'm3',
+    subjectId: 'subj-m3-2',
+    subjectName: 'Fisika & Termodinamika',
+    title: 'Kuis Fisika Bab Hukum Termodinamika',
+    examType: 'Kuis',
+    date: '2026-08-18',
+    time: '10:00 - 10:45',
+    targetGrade: 92,
+    topicsCovered: ['Proses Isobarik & Isokhorik', 'Mesin Carnot & Efisiensi'],
+    status: 'Mendatang'
+  },
+
+  // Nayla Santoso (m4)
+  {
+    id: 'ex-m4-1',
+    childId: 'm4',
+    subjectId: 'subj-m4-1',
+    subjectName: 'Matematika & Logika SD',
+    title: 'Ulangan Harian Bab 2: Pecahan & Desimal',
     examType: 'UTS',
     date: '2026-08-10',
     time: '08:00 - 09:30',
     targetGrade: 95,
-    topicsCovered: ['Pecahan Senilai', 'Pecahan Campuran', 'Mengubah ke Desimal & Persen'],
+    topicsCovered: ['Pecahan Senilai', 'Pecahan Campuran', 'Mengubah ke Desimal'],
     status: 'Mendatang'
-  },
-  {
-    id: 'ex-2',
-    childId: 'child-1',
-    subjectId: 'subj-2',
-    subjectName: 'Ilmu Pengetahuan Alam (IPA)',
-    title: 'Kuis IPA Bab Daur Hidup Hewan & Daur Air',
-    examType: 'Kuis',
-    date: '2026-08-12',
-    time: '10:00 - 10:45',
-    targetGrade: 92,
-    topicsCovered: ['Metamorfosis Sempurna & Tidak Sempurna', 'Evaporasi & Kondensasi'],
-    status: 'Mendatang'
-  },
-  {
-    id: 'ex-3',
-    childId: 'child-1',
-    subjectId: 'subj-3',
-    subjectName: 'Bahasa Inggris',
-    title: 'Mid-Semester English Assessment',
-    examType: 'UTS',
-    date: '2026-07-20',
-    time: '09:00 - 10:30',
-    targetGrade: 90,
-    actualGrade: 91,
-    topicsCovered: ['Past Tense Narrative', 'Vocabulary Solar System'],
-    status: 'Selesai'
   }
 ];
 
 const mockReadingLogs: ReadingLog[] = [
+  // Ahmad Santoso (m3)
   {
-    id: 'rl-1',
-    childId: 'child-1',
-    bookTitle: 'Ensiklopedia Anak: Keajaiban Tata Surya & Alam Semesta',
+    id: 'rl-m3-1',
+    childId: 'm3',
+    bookTitle: 'Physics for Scientists and Engineers',
+    author: 'Raymond A. Serway',
+    category: 'Buku',
+    totalPages: 450,
+    pagesRead: 210,
+    status: 'Sedang Dibaca',
+    summary: 'Buku panduan mendalam konsep mekanika klasik dan gaya elektromagnetik.',
+    rating: 5,
+    lastReadDate: '2026-08-01'
+  },
+  {
+    id: 'rl-m3-2',
+    childId: 'm3',
+    bookTitle: 'Python Crash Course for High School Coding',
+    author: 'Eric Matthes',
+    category: 'Buku Edukasi',
+    totalPages: 320,
+    pagesRead: 320,
+    status: 'Selesai',
+    summary: 'Panduan praktis koding Python dari variabel hingga analisis data.',
+    rating: 5,
+    lastReadDate: '2026-07-28'
+  },
+
+  // Nayla Santoso (m4)
+  {
+    id: 'rl-m4-1',
+    childId: 'm4',
+    bookTitle: 'Ensiklopedia Anak: Keajaiban Musik & Tata Surya',
     author: 'National Geographic Kids',
     category: 'Buku',
     totalPages: 120,
-    pagesRead: 85,
+    pagesRead: 90,
     status: 'Sedang Dibaca',
-    summary: 'Buku penuh ilustrasi indah tentang planet, bintang, dan lubang hitam di luar angkasa.',
+    summary: 'Buku ilustrasi indah tentang frekuensi bunyi musik dan planet-planet.',
     rating: 5,
     lastReadDate: '2026-07-31'
-  },
-  {
-    id: 'rl-2',
-    childId: 'child-1',
-    bookTitle: 'Petualangan Detektif Cilik & Rahasia Kode Matematika',
-    author: 'Karakter Edukasi',
-    category: 'Novel',
-    totalPages: 90,
-    pagesRead: 90,
-    status: 'Selesai',
-    summary: 'Menceritakan sekelompok anak sekolah yang memecahkan misteri dengan teka-teki logika.',
-    rating: 5,
-    lastReadDate: '2026-07-25'
-  },
-  {
-    id: 'rl-3',
-    childId: 'child-2',
-    bookTitle: 'Seri Dongeng Menyayangi Hewan: Si Kelinci Cerdik',
-    author: 'Bunda Kirana',
-    category: 'Komik Edukasi',
-    totalPages: 24,
-    pagesRead: 20,
-    status: 'Sedang Dibaca',
-    summary: 'Dongeng bergambar dengan tulisan cetak besar cocok untuk anak belajar mengeja.',
-    rating: 5,
-    lastReadDate: '2026-07-30'
   }
 ];
 
 const mockSkills: SkillDevelopment[] = [
+  // Ahmad Santoso (m3)
   {
-    id: 'sk-1',
-    childId: 'child-1',
-    skillName: 'Coding',
-    level: 'Menengah',
-    projectsBuiltCount: 4,
+    id: 'sk-m3-1',
+    childId: 'm3',
+    skillName: 'Python Programming & AI',
+    level: 'Lanjutan',
+    projectsBuiltCount: 5,
     certificatesEarnedCount: 2,
-    notes: 'Telah menguasai blok perulangan, variabel skor, dan sensor sentuh di Scratch.',
+    notes: 'Telah menguasai Pandas, NumPy, dan pembuatan bot otomatisasi.',
     iconName: 'Code',
-    progressPercent: 75
+    progressPercent: 85
   },
   {
-    id: 'sk-2',
-    childId: 'child-1',
-    skillName: 'Robotik',
+    id: 'sk-m3-2',
+    childId: 'm3',
+    skillName: 'Olahraga Basket & Strategi Tim',
+    level: 'Lanjutan',
+    projectsBuiltCount: 12,
+    certificatesEarnedCount: 3,
+    notes: 'Kapten lapangan tim sekolah dengan kemampuan analisis taktik lawan.',
+    iconName: 'Trophy',
+    progressPercent: 90
+  },
+
+  // Nayla Santoso (m4)
+  {
+    id: 'sk-m4-1',
+    childId: 'm4',
+    skillName: 'Bermain Piano Klassik',
+    level: 'Menengah',
+    projectsBuiltCount: 6,
+    certificatesEarnedCount: 2,
+    notes: 'Mampu memainkan partitur Sonatina Beethoven dengan tempo presisi.',
+    iconName: 'Music',
+    progressPercent: 88
+  },
+  {
+    id: 'sk-m4-2',
+    childId: 'm4',
+    skillName: 'Seni Tari Balet',
     level: 'Pemula',
     projectsBuiltCount: 2,
     certificatesEarnedCount: 1,
-    notes: 'Mampu merakit mobil robotic kit sederhana dengan sensor garis.',
-    iconName: 'Bot',
-    progressPercent: 40
-  },
-  {
-    id: 'sk-3',
-    childId: 'child-1',
-    skillName: 'Public Speaking',
-    level: 'Pemula',
-    projectsBuiltCount: 1,
-    certificatesEarnedCount: 0,
-    notes: 'Latihan presentasi tugas sekolah di depan kelas dengan percaya diri.',
-    iconName: 'Mic',
-    progressPercent: 35
+    notes: 'Kelenturan tubuh dan ritme gerakan balet terus meningkat.',
+    iconName: 'Sparkles',
+    progressPercent: 60
   }
 ];
 
@@ -392,7 +544,7 @@ const mockQuizzes: Quiz[] = [
   {
     id: 'qz-1',
     subject: 'Matematika',
-    topic: 'Pecahan & Desimal',
+    topic: 'Kalkulus & Pecahan',
     difficulty: 'Sedang',
     questions: [
       {
@@ -400,7 +552,7 @@ const mockQuizzes: Quiz[] = [
         question: 'Berapakah hasil dari 1/2 + 2/4?',
         options: ['1', '3/4', '1/2', '2'],
         correctIndex: 0,
-        explanation: '2/4 dapat disederhanakan menjadi 1/2. Jadi 1/2 + 1/2 = 1.'
+        explanation: '2/4 disederhanakan menjadi 1/2. Jadi 1/2 + 1/2 = 1.'
       },
       {
         id: 2,
@@ -415,79 +567,121 @@ const mockQuizzes: Quiz[] = [
 
 const mockQuizResults: QuizResult[] = [
   {
-    id: 'qr-1',
-    childId: 'child-1',
+    id: 'qr-m3-1',
+    childId: 'm3',
     quizId: 'qz-1',
-    subject: 'Matematika',
-    topic: 'Pecahan & Desimal',
+    subject: 'Matematika Lanjut',
+    topic: 'Kalkulus & Limit',
     score: 100,
     totalQuestions: 2,
     correctCount: 2,
-    date: '2026-07-28'
+    date: '2026-07-30'
+  },
+  {
+    id: 'qr-m4-1',
+    childId: 'm4',
+    quizId: 'qz-1',
+    subject: 'Matematika SD',
+    topic: 'Pecahan',
+    score: 100,
+    totalQuestions: 2,
+    correctCount: 2,
+    date: '2026-07-29'
   }
 ];
 
 const mockCertificates: Certificate[] = [
+  // Ahmad Santoso (m3)
   {
-    id: 'cert-1',
-    childId: 'child-1',
-    title: 'Juara 2 Lomba Matematika Cilik Tingkat Kota',
+    id: 'cert-m3-1',
+    childId: 'm3',
+    title: 'Juara 2 Lomba Olimpiade Fisika SMA Tingkat Kota',
     category: 'Olimpiade',
-    issuer: 'Dinas Pendidikan Kota Jakarta',
-    dateReceived: '2026-05-14',
-    description: 'Penghargaan prestasi atas penyelesaian 30 soal olimpiade logika matematika.'
+    issuer: 'Dinas Pendidikan DKI Jakarta',
+    dateReceived: '2026-05-18',
+    description: 'Penghargaan atas keunggulan pemecahan 25 soal mekanika & gelombang fisika.'
   },
   {
-    id: 'cert-2',
-    childId: 'child-1',
-    title: 'Sertifikat Kelulusan Scratch Coding Junior Level 1',
+    id: 'cert-m3-2',
+    childId: 'm3',
+    title: 'Sertifikat Kelulusan Python Data Science Junior',
     category: 'Keterampilan',
-    issuer: 'Indonesian Kids Code Academy',
-    dateReceived: '2026-06-20',
-    description: 'Berhasil membuat game interaktif labirin dan animasi edukasi sains.'
+    issuer: 'Indonesia High School AI Academy',
+    dateReceived: '2026-06-25',
+    description: 'Berhasil membuat model analisis data menggunakan library Pandas & Matplotlib.'
+  },
+
+  // Nayla Santoso (m4)
+  {
+    id: 'cert-m4-1',
+    childId: 'm4',
+    title: 'Juara 1 Lomba Piano Anak Tingkat Provinsi',
+    category: 'Seni',
+    issuer: 'Yayasan Seni Musik Nusantara',
+    dateReceived: '2026-06-10',
+    description: 'Penghargaan interpretasi musik piano klasik terbaik kategori usia 9-11 tahun.'
   }
 ];
 
 const mockTeacherNotes: TeacherNote[] = [
+  // Ahmad Santoso (m3)
   {
-    id: 'tn-1',
-    childId: 'child-1',
-    teacherName: 'Bpk. Hendra Wijaya, S.Pd.',
+    id: 'tn-m3-1',
+    childId: 'm3',
+    teacherName: 'Bpk. Drs. Sugiarto, M.Pd.',
     subject: 'Wali Kelas / Matematika',
-    date: '2026-07-26',
-    note: 'Arsa sangat santun dan aktif membantu temannya yang kesulitan dalam pelajaran matematika. Pertahankan ketelitiannya!',
+    date: '2026-07-28',
+    note: 'Ahmad sangat santun, berjiwa kepemimpinan tinggi, dan menjadi panutan belajar teman-temannya di kelas XI IPA.',
     type: 'Pujian'
   },
+
+  // Nayla Santoso (m4)
   {
-    id: 'tn-2',
-    childId: 'child-1',
-    teacherName: 'Ms. Sarah Jenkins',
-    subject: 'Bahasa Inggris',
-    date: '2026-07-20',
-    note: 'Mohon ingatkan Arsa untuk membawa buku modul cerita English Reader pada hari Kamis.',
-    type: 'Perhatian'
+    id: 'tn-m4-1',
+    childId: 'm4',
+    teacherName: 'Ibu Ningsih, S.Pd.',
+    subject: 'Wali Kelas SD',
+    date: '2026-07-26',
+    note: 'Nayla sangat ceria dan rajin merapikan alat tulis serta buku bacaan perpustakaan.',
+    type: 'Pujian'
   }
 ];
 
 const mockInsights: EducationInsight[] = [
+  // Ahmad Santoso (m3)
   {
-    id: 'eins-1',
-    childId: 'child-1',
-    date: '2026-07-31',
-    title: 'Fokus Belajar Arsa Berada pada Performa Puncak di Pagi & Sore Hari!',
-    summary: 'Berdasarkan data aktivitas 2 minggu terakhir, Arsa menyelesaikan soal matematika 30% lebih cepat saat sesi belajar pukul 16.00 dibanding malam hari.',
+    id: 'eins-m3-1',
+    childId: 'm3',
+    date: '2026-08-01',
+    title: 'Fokus Belajar Kalkulus Ahmad Mencapai Performa Puncak di Pagi & Sore Hari!',
+    summary: 'Berdasarkan analisis aktivitas 2 minggu terakhir, Ahmad menyelesaikan soal kalkulus 35% lebih cepat pada jam 16.30 dibanding larut malam.',
     recommendations: [
-      'Jadwalkan soal hitungan & logika berat pada jam 16.00 - 17.00.',
-      'Gunakan sesi malam khusus untuk membaca buku dongeng/ensiklopedia santai.',
-      'Berikan jeda minum air & camilan buah tiap 25 menit.'
+      'Jadwalkan latihan soal kalkulus & latihan UTBK berat pada jam 16.30 - 17.30.',
+      'Jaga kecukupan hidrasi air & asupan karbohidrat kompleks seusai latihan basket.',
+      'Gunakan sesi malam untuk ulasan santai koding Python atau membaca literatur fisika.'
     ],
     category: 'Fokus Belajar',
-    scoreImprovement: '+12% Ketelitian'
+    scoreImprovement: '+15% Akurasi Soal'
+  },
+
+  // Nayla Santoso (m4)
+  {
+    id: 'eins-m4-1',
+    childId: 'm4',
+    date: '2026-07-31',
+    title: 'Kombinasi Musik Piano & Visual Terbukti Meningkatkan Daya Ingat Matematika Nayla!',
+    summary: 'Nayla menunjukkan pemahaman pecahan lebih cepat ketika soal dihubungkan dengan ritme tempo ketukan lagu.',
+    recommendations: [
+      'Gunakan lagu interaktif saat mendampingi Nayla belajar matematika.',
+      'Berikan pujian positif saat Nayla menyelesaikan latihan tanpa ditunda.'
+    ],
+    category: 'Gaya Belajar Visual-Auditori',
+    scoreImprovement: '+10% Pemahaman'
   }
 ];
 
 export const useEducationStore = create<EducationStoreState>((set, get) => ({
-  selectedChildId: 'child-1',
+  selectedChildId: 'm3',
   profiles: mockProfiles,
   subjects: mockSubjects,
   homeworks: mockHomeworks,
@@ -637,6 +831,10 @@ export const useEducationStore = create<EducationStoreState>((set, get) => ({
     skills: state.skills.map((sk) => (sk.id === id ? { ...sk, level, progressPercent } : sk))
   })),
 
+  addQuiz: (quiz) => set((state) => ({
+    quizzes: [{ ...quiz, id: `qz-${Date.now()}` }, ...state.quizzes]
+  })),
+
   addQuizResult: (result) => set((state) => ({
     quizResults: [
       {
@@ -718,24 +916,35 @@ export const useEducationStore = create<EducationStoreState>((set, get) => ({
 
   getParentSummary: (childId: string): ParentEducationSummary => {
     const state = get();
-    const profile = state.profiles[childId] || mockProfiles['child-1'];
+    const profile = state.profiles[childId] || mockProfiles['m3'] || mockProfiles['child-1'];
     const childHws = state.homeworks.filter((h) => h.childId === childId);
     const pendingHws = childHws.filter((h) => h.status !== 'Selesai').length;
     const childExams = state.exams.filter((e) => e.childId === childId && e.status === 'Mendatang').length;
     const certs = state.certificates.filter((c) => c.childId === childId).map((c) => c.title);
 
+    const childNameMap: Record<string, string> = {
+      'm3': 'Ahmad Santoso',
+      'm4': 'Nayla Santoso',
+      'child-1': 'Ahmad Santoso',
+      'child-2': 'Nayla Santoso'
+    };
+
+    const resolvedName = childNameMap[childId] || 'Siswa';
+
     return {
       childId,
-      childName: childId === 'child-2' ? 'Bening Putri Kirana' : 'Arsa Putra Pratama',
+      childName: resolvedName,
       school: profile.schoolName,
       grade: profile.grade,
-      overallGPA: 91.2,
-      studyHoursWeekly: 5.2,
+      overallGPA: childId === 'm3' ? 92.8 : 91.5,
+      studyHoursWeekly: childId === 'm3' ? 7.5 : 5.2,
       pendingHomeworkCount: pendingHws,
       upcomingExamsCount: childExams,
-      recentAchievements: certs.length > 0 ? certs : ['Juara 2 Lomba Matematika Cilik'],
+      recentAchievements: certs.length > 0 ? certs : ['Juara Olimpiade Sains'],
       aiCoachAdvice:
-        'Arsa menunjukkan kemajuan signifikan pada logika pecahan dan koding. Berikan apresiasi saat menyelesaikan PR tanpa perlu diingatkan.'
+        childId === 'm3'
+          ? 'Ahmad menunjukkan ketekunan luar biasa dalam kalkulus & koding Python. Berikan ruang untuk menyeimbangkan latihan basket dan persiapan UTBK.'
+          : 'Nayla belajar sangat efektif melalui kombinasi nada musik piano dan latihan visual. Apresiasi semangat belajarnya secara konsisten.'
     };
   }
 }));

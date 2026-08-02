@@ -185,7 +185,7 @@ export const AIGoalsHabitsRoutinesView: React.FC = () => {
                   </span>
                 </div>
                 <ul className="space-y-1">
-                  {rt.items.map((it, i) => (
+                  {(rt.items || []).map((it, i) => (
                     <li key={i} className="text-xs text-slate-300 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                       <span>{it}</span>

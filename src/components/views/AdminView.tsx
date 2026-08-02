@@ -26,6 +26,7 @@ import { useWorkspaceStore } from '../../features/admin/stores/useWorkspaceStore
 import { useAnalyticsStore } from '../../features/admin/stores/useAnalyticsStore';
 import { useMonitoringStore } from '../../features/admin/stores/useMonitoringStore';
 import { useBillingStore } from '../../features/admin/stores/useBillingStore';
+import { useDummyDataStore } from '../../store/useDummyDataStore';
 
 interface AdminViewProps {
   familyMembers: FamilyMember[];
@@ -52,6 +53,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const { analytics, monthlyGrowthTrend } = useAnalyticsStore();
   const { status, recentErrors, refreshMonitoring } = useMonitoringStore();
   const { subscription, availablePlans, invoices } = useBillingStore();
+  const { hideDummyData, toggleHideDummyData } = useDummyDataStore();
 
   const [auditSearch, setAuditSearch] = useState('');
 
@@ -477,7 +479,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     </div>
 
                     <ul className="space-y-1 pt-2 border-t border-slate-800/80">
-                      {plan.features.map((feat, idx) => (
+                      {(plan.features || []).map((feat, idx) => (
                         <li key={idx} className="text-[11px] text-slate-300 flex items-center gap-1.5">
                           <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                           <span>{feat}</span>
@@ -508,6 +510,28 @@ export const AdminView: React.FC<AdminViewProps> = ({
           </h3>
 
           <div className="space-y-3 text-xs">
+            <div className="p-4 bg-amber-950/20 rounded-2xl border border-amber-500/40 flex items-center justify-between">
+              <div>
+                <div className="font-bold text-amber-300 text-sm flex items-center gap-2">
+                  <Database className="w-4 h-4 text-amber-400" />
+                  <span>Sembunyikan Data Dummy / Contoh</span>
+                </div>
+                <p className="text-slate-300 text-[11px] mt-0.5">
+                  Menyembunyikan seluruh sampel data default (anggota keluarga, riwayat, tugas, galeri) agar aplikasi hanya menampilkan data asli yang dibuat pengguna.
+                </p>
+              </div>
+              <button
+                onClick={toggleHideDummyData}
+                className={`px-4 py-2 rounded-xl font-bold text-xs transition-all ${
+                  hideDummyData 
+                    ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20' 
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
+                }`}
+              >
+                {hideDummyData ? 'Aktif (Disembunyikan)' : 'Tampilkan Data Dummy'}
+              </button>
+            </div>
+
             {systemSettings.map((setting) => (
               <div key={setting.id} className="p-4 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
                 <div>

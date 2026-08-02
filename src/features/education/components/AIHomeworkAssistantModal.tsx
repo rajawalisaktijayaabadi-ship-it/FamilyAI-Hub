@@ -52,15 +52,25 @@ export const AIHomeworkAssistantModal: React.FC<AIHomeworkAssistantModalProps> =
     }
 
     try {
-      const res = await fetch('/api/ai/education/homework-help', {
+      const res = await fetch('/api/ai/education', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, subject })
+        body: JSON.stringify({ question: prompt, subject, gradeLevel: 'Tingkat Sekolah', type: 'homework' })
       });
 
       if (res.ok) {
         const data = await res.json();
-        setResponse(data);
+        setResponse({
+          concept: data.directAnswer || `Konsep Utama (${subject}): Bimbingan Logika & Teori`,
+          steps: data.stepByStep || [
+            '1. Pahami apa yang diketahui dan apa yang ditanyakan dalam soal.',
+            '2. Gunakan aturan dasar yang berlaku secara sistematis.',
+            '3. Kerjakan langkah demi langkah dengan teliti.'
+          ],
+          exampleQuestion: data.funFact ? `Fakta Menarik: ${data.funFact}` : 'Contoh Soal Serupa: Memahami prinsip penyelesaian soal.',
+          exampleSolution: 'Pendekatan edukatif: Pahami pola soal sebelum mengeksekusi rumus.',
+          practiceQuestion: data.practicePrompt || 'Uji Mandiri: Coba selesaikan 1 latihan serupa!'
+        });
       } else {
         // Fallback rich structure if network/API error
         setResponse({

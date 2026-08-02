@@ -82,7 +82,7 @@ export const MoodRemindersSubTab: React.FC = () => {
             <p className="text-xs text-slate-400 leading-relaxed">{rem.description}</p>
 
             <div className="flex items-center justify-between text-[10px] text-slate-500 pt-2 border-t border-slate-800/80">
-              <span>Hari: {rem.days.join(', ')}</span>
+              <span>Hari: {rem.days?.join(', ') || 'Setiap Hari'}</span>
               <span className={rem.enabled ? 'text-amber-400 font-bold' : 'text-slate-600'}>
                 {rem.enabled ? 'Aktif' : 'Nonaktif'}
               </span>

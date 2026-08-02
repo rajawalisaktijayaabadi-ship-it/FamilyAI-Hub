@@ -620,7 +620,7 @@ export const useTravelStore = create<TravelStoreState>((set, get) => ({
         if (ep.id === plannerId) {
           return {
             ...ep,
-            checklist: ep.checklist.map((chk) =>
+            checklist: (ep.checklist || []).map((chk) =>
               chk.id === itemId ? { ...chk, done: !chk.done } : chk
             )
           };
@@ -636,7 +636,7 @@ export const useTravelStore = create<TravelStoreState>((set, get) => ({
         if (ep.id === plannerId) {
           return {
             ...ep,
-            checklist: [...ep.checklist, { id: `ec-${Date.now()}`, title, done: false }]
+            checklist: [...(ep.checklist || []), { id: `ec-${Date.now()}`, title, done: false }]
           };
         }
         return ep;

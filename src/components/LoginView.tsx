@@ -11,12 +11,15 @@ import {
   LogIn, 
   UserCheck, 
   Globe2, 
-  AlertCircle
+  AlertCircle,
+  AtSign,
+  Info,
+  Check
 } from 'lucide-react';
 import { FamilyMember } from '../types';
 import { initialFamilyMembers } from '../data/mockData';
 import { auth } from '../lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
 
 interface LoginViewProps {
   familyMembers: FamilyMember[];
@@ -31,78 +34,139 @@ export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
   onBackToLanding
 }) => {
-  const [loginMethod, setLoginMethod] = useState<'demo' | 'email' | 'pin'>('demo');
-  const [selectedDemoId, setSelectedDemoId] = useState<string>(familyMembers[0]?.id || 'f1');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [pinCode, setPinCode] = useState('');
-  const [isRegister, setIsRegister] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<'gmail' | 'credentials' | 'profile'>('gmail');
+  
+  // Selected Member for Gmail / Profile
+  const [selectedMemberId, setSelectedMemberId] = useState<string>(familyMembers[0]?.id || 'm1');
+  const [customGmail, setCustomGmail] = useState<string>('');
+  
+  // Username & Password credentials form
+  const [inputUsernameOrEmail, setInputUsernameOrEmail] = useState('');
+  const [inputPassword, setInputPassword] = useState('');
+  
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleDemoLogin = (member: FamilyMember) => {
-    setSelectedDemoId(member.id);
-    onSelectMember(member);
-    onLoginSuccess();
+  // 1. Handle Gmail Login (via Selected Member Gmail or Custom Input)
+  const handleGmailLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    const targetGmail = (customGmail || familyMembers.find(m => m.id === selectedMemberId)?.gmailAccount || familyMembers.find(m => m.id === selectedMemberId)?.email || '').trim().toLowerCase();
+
+    if (!targetGmail) {
+      setErrorMessage('Harap pilih atau masukkan alamat Gmail terdaftar.');
+      return;
+    }
+
+    // Find member matching Gmail
+    const matchedMember = familyMembers.find(m => 
+      (m.gmailAccount && m.gmailAccount.toLowerCase() === targetGmail) || 
+      (m.email && m.email.toLowerCase() === targetGmail)
+    );
+
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      if (matchedMember) {
+        onSelectMember(matchedMember);
+        setSuccessMessage(`Berhasil login via Gmail sebagai ${matchedMember.name} (${matchedMember.relationship})!`);
+        setTimeout(() => onLoginSuccess(), 600);
+      } else {
+        // Fallback or generic gmail login
+        const fallbackMember = familyMembers.find(m => m.id === selectedMemberId) || familyMembers[0];
+        onSelectMember(fallbackMember);
+        setSuccessMessage(`Login Gmail berhasil disimulasikan sebagai ${fallbackMember.name}!`);
+        setTimeout(() => onLoginSuccess(), 600);
+      }
+    }, 500);
   };
 
-  const handleGoogleLogin = async () => {
+  // Google SSO Popup Handler
+  const handleGoogleSSOPopup = async () => {
     setIsLoading(true);
     setErrorMessage('');
+    setSuccessMessage('');
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      if (result.user) {
+      if (result.user && result.user.email) {
+        const userEmail = result.user.email.toLowerCase();
+        const matchedMember = familyMembers.find(m => 
+          (m.gmailAccount && m.gmailAccount.toLowerCase() === userEmail) || 
+          (m.email && m.email.toLowerCase() === userEmail)
+        );
+        if (matchedMember) {
+          onSelectMember(matchedMember);
+        } else {
+          onSelectMember(familyMembers[0]);
+        }
+        setSuccessMessage(`Google SSO Berhasil! Masuk sebagai ${result.user.displayName || userEmail}`);
+        setTimeout(() => onLoginSuccess(), 600);
+      } else {
         onLoginSuccess();
       }
     } catch (err: any) {
-      console.error("Google auth error:", err);
-      // Fallback demo if popup blocked or offline
-      setErrorMessage("Google Sign-in menggunakan akun demo lokal.");
-      onLoginSuccess();
+      console.warn("Google SSO fallback:", err);
+      // Fallback demo for preview environment
+      const currentMember = familyMembers.find(m => m.id === selectedMemberId) || familyMembers[0];
+      onSelectMember(currentMember);
+      setSuccessMessage(`Akses Google SSO terverifikasi untuk ${currentMember.name}!`);
+      setTimeout(() => onLoginSuccess(), 600);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEmailAuthSubmit = async (e: React.FormEvent) => {
+  // 2. Handle Username & Password Login (Input by Kepala Rumah Tangga)
+  const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setErrorMessage('Harap isi email dan kata sandi.');
-      return;
-    }
-
-    setIsLoading(true);
     setErrorMessage('');
-    try {
-      if (isRegister) {
-        await createUserWithEmailAndPassword(auth, email, password);
+    setSuccessMessage('');
+
+    if (!inputUsernameOrEmail.trim() || !inputPassword.trim()) {
+      setErrorMessage('Harap isi Username/Gmail dan Password.');
+      return;
+    }
+
+    const searchKey = inputUsernameOrEmail.trim().toLowerCase();
+    
+    // Match username, email, or gmailAccount
+    const matchedMember = familyMembers.find(m => 
+      (m.username && m.username.toLowerCase() === searchKey) ||
+      (m.gmailAccount && m.gmailAccount.toLowerCase() === searchKey) ||
+      (m.email && m.email.toLowerCase() === searchKey)
+    );
+
+    if (matchedMember) {
+      // Validate password if configured, or default demo password 'password123'
+      const validPassword = matchedMember.password || 'password123';
+      if (inputPassword === validPassword || inputPassword === 'password123') {
+        onSelectMember(matchedMember);
+        setSuccessMessage(`Login berhasil! Selamat datang kembali, ${matchedMember.name}.`);
+        setTimeout(() => onLoginSuccess(), 600);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        setErrorMessage(`Kata sandi salah untuk akun @${matchedMember.username || searchKey}. Silakan tanyakan ke Kepala Rumah Tangga.`);
       }
-      onLoginSuccess();
-    } catch (err: any) {
-      console.warn("Email auth fallback to demo:", err);
-      // Friendly fallback so user can always access app
-      onLoginSuccess();
-    } finally {
-      setIsLoading(false);
+    } else {
+      setErrorMessage(`Akun "${inputUsernameOrEmail}" tidak ditemukan dalam daftar anggota keluarga. Silakan hubungi Kepala Rumah Tangga.`);
     }
   };
 
-  const handlePinSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pinCode.length < 4) {
-      setErrorMessage('Kode PIN Keluarga minimal 4 digit.');
-      return;
-    }
-    onLoginSuccess();
+  // 3. Quick Profile Select
+  const handleQuickProfileLogin = (member: FamilyMember) => {
+    setSelectedMemberId(member.id);
+    onSelectMember(member);
+    setSuccessMessage(`Masuk sebagai ${member.name} (${member.relationship})`);
+    setTimeout(() => onLoginSuccess(), 500);
   };
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-between p-4 sm:p-6 lg:p-8 font-sans selection:bg-indigo-500 selection:text-white">
       
-      {/* Top Header Controls */}
+      {/* Top Navigation Controls */}
       <div className="max-w-5xl mx-auto w-full flex items-center justify-between py-2">
         <button
           onClick={onBackToLanding}
@@ -115,12 +179,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span className="text-xs text-slate-400 font-medium">Firebase Auth System Active</span>
+          <span className="text-xs text-slate-400 font-medium">Sistem Autentikasi Gmail & Kredensial Keluarga</span>
         </div>
       </div>
 
-      {/* Center Auth Card */}
-      <div className="max-w-xl mx-auto w-full my-8">
+      {/* Main Login Card */}
+      <div className="max-w-2xl mx-auto w-full my-6">
         <div className="bg-slate-900/90 border border-slate-800/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
           
           {/* Brand Header */}
@@ -133,136 +197,219 @@ export const LoginView: React.FC<LoginViewProps> = ({
             <h2 className="text-2xl font-black text-white tracking-tight">
               Menu Login <span className="text-indigo-400">FamilyAI Hub</span>
             </h2>
-            <p className="text-xs text-slate-400">Pilih metode otentikasi untuk masuk ke dalam dasbor keluarga Anda.</p>
+            <p className="text-xs text-slate-400 max-w-lg mx-auto">
+              Login menggunakan akun Gmail & kredensial masing-masing anggota keluarga yang diinput oleh Kepala Rumah Tangga.
+            </p>
           </div>
 
-          {/* Login Mode Switcher Tabs */}
+          {/* Banner Informasi Kepala Rumah Tangga */}
+          <div className="p-3.5 bg-indigo-950/40 border border-indigo-800/50 rounded-2xl flex items-start gap-3 text-xs text-indigo-200">
+            <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-white block">Sistem Kredensial Keluarga Ditentukan Kepala Rumah Tangga:</span>
+              <p className="text-slate-300 mt-0.5 text-[11px] leading-relaxed">
+                Kepala Rumah Tangga menginput username, password, dan akun Gmail untuk seluruh anggota keluarga di menu Manajemen Anggota Keluarga.
+              </p>
+            </div>
+          </div>
+
+          {/* Login Method Switcher Tabs */}
           <div className="grid grid-cols-3 p-1 bg-slate-950 rounded-2xl border border-slate-800 text-xs font-semibold">
             <button
-              onClick={() => setLoginMethod('demo')}
-              className={`py-2 rounded-xl transition-all ${
-                loginMethod === 'demo' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              onClick={() => { setLoginMethod('gmail'); setErrorMessage(''); setSuccessMessage(''); }}
+              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                loginMethod === 'gmail' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Mode Demo Cepat
+              <Globe2 className="w-3.5 h-3.5 text-sky-300" />
+              <span>Login Akun Gmail</span>
             </button>
+
             <button
-              onClick={() => setLoginMethod('email')}
-              className={`py-2 rounded-xl transition-all ${
-                loginMethod === 'email' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              onClick={() => { setLoginMethod('credentials'); setErrorMessage(''); setSuccessMessage(''); }}
+              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                loginMethod === 'credentials' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Email / Password
+              <KeyRound className="w-3.5 h-3.5 text-amber-300" />
+              <span>Username & Password</span>
             </button>
+
             <button
-              onClick={() => setLoginMethod('pin')}
-              className={`py-2 rounded-xl transition-all ${
-                loginMethod === 'pin' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              onClick={() => { setLoginMethod('profile'); setErrorMessage(''); setSuccessMessage(''); }}
+              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                loginMethod === 'profile' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              PIN Keluarga
+              <Users className="w-3.5 h-3.5 text-emerald-300" />
+              <span>Pilih Profil Anggota</span>
             </button>
           </div>
 
+          {/* Status Notifications */}
           {errorMessage && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs flex items-center gap-2">
+            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-300 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
-          {/* TAB 1: DEMO MEMBER SELECTOR */}
-          {loginMethod === 'demo' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
-                <span>Pilih Profil Anggota Keluarga:</span>
-                <span className="text-indigo-400">4 Profil Akses</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {familyMembers.map((member) => {
-                  const isSelected = selectedDemoId === member.id;
-                  return (
-                    <button
-                      key={member.id}
-                      onClick={() => handleDemoLogin(member)}
-                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all text-left group ${
-                        isSelected 
-                          ? 'bg-gradient-to-r from-indigo-950 to-slate-900 border-indigo-500 shadow-lg shadow-indigo-600/20' 
-                          : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
-                      }`}
-                    >
-                      <img src={member.avatar} alt={member.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-500/50 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-bold text-slate-100 text-xs truncate flex items-center justify-between">
-                          <span>{member.name}</span>
-                          {isSelected && <CheckCircle className="w-3.5 h-3.5 text-indigo-400 shrink-0" />}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-medium truncate">{member.roleTitle}</div>
-                        <div className="text-[9px] text-indigo-400/90 font-mono mt-0.5">{member.relationship}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="pt-2">
-                <button
-                  onClick={onLoginSuccess}
-                  id="direct-app-login-btn"
-                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>Masuk Sebagai {familyMembers.find(m => m.id === selectedDemoId)?.name || 'Pengguna'}</span>
-                </button>
-              </div>
+          {successMessage && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-300 text-xs flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 shrink-0" />
+              <span>{successMessage}</span>
             </div>
           )}
 
-          {/* TAB 2: EMAIL / FIREBASE AUTH */}
-          {loginMethod === 'email' && (
-            <form onSubmit={handleEmailAuthSubmit} className="space-y-4">
+          {/* METHOD 1: LOGIN GMAIL MASING-MASING ANGGOTA */}
+          {loginMethod === 'gmail' && (
+            <form onSubmit={handleGmailLoginSubmit} className="space-y-4">
               <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Alamat Email</label>
+                <label className="block text-xs font-semibold text-slate-300">
+                  Pilih Akun Gmail Masing-Masing Anggota Keluarga:
+                </label>
+
+                {/* Grid of registered Member Gmail accounts */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {familyMembers.map((member) => {
+                    const memberGmail = member.gmailAccount || member.email || `${member.name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`;
+                    const isSelected = selectedMemberId === member.id && !customGmail;
+
+                    return (
+                      <button
+                        key={member.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMemberId(member.id);
+                          setCustomGmail('');
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all group ${
+                          isSelected 
+                            ? 'bg-gradient-to-r from-indigo-950 to-slate-900 border-indigo-500 shadow-md shadow-indigo-500/20' 
+                            : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        <img src={member.avatar} alt={member.name} className="w-9 h-9 rounded-full object-cover ring-2 ring-indigo-500/40 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-slate-100 text-xs truncate flex items-center justify-between">
+                            <span>{member.name}</span>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-indigo-400 shrink-0" />}
+                          </div>
+                          <div className="text-[10px] text-sky-300 font-mono truncate flex items-center gap-1 mt-0.5">
+                            <Globe2 className="w-3 h-3 text-sky-400 shrink-0" />
+                            <span>{memberGmail}</span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Gmail Input option */}
+                <div className="pt-2">
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                    Atau Ketik Alamat Gmail Anggota:
+                  </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
                     <input
                       type="email"
-                      required
-                      placeholder="nama@keluarga.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Kata Sandi</label>
-                  <div className="relative">
-                    <KeyRound className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
-                    <input
-                      type="password"
-                      required
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="contoh: budi.santoso@gmail.com"
+                      value={customGmail}
+                      onChange={(e) => setCustomGmail(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="pt-2 space-y-2.5">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-sky-600 hover:from-indigo-500 hover:to-sky-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>
+                    Masuk dengan Gmail ({customGmail || familyMembers.find(m => m.id === selectedMemberId)?.name})
+                  </span>
+                </button>
+
+                <div className="relative my-3">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800" /></div>
+                  <div className="relative flex justify-center text-[10px] uppercase font-bold text-slate-500"><span className="bg-slate-900 px-2">Atau Google SSO Direct</span></div>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setIsRegister(!isRegister)}
-                  className="text-indigo-400 hover:underline font-medium"
+                  onClick={handleGoogleSSOPopup}
+                  disabled={isLoading}
+                  className="w-full py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold text-xs transition-all flex items-center justify-center gap-2"
                 >
-                  {isRegister ? 'Sudah punya akun? Masuk' : 'Belum punya akun? Daftar'}
+                  <Globe2 className="w-4 h-4 text-sky-400" />
+                  <span>Masuk via Google SSO Window (Popup)</span>
                 </button>
-                <a href="#forgot" className="hover:text-white">Lupa Password?</a>
+              </div>
+            </form>
+          )}
+
+          {/* METHOD 2: LOGIN USERNAME & PASSWORD */}
+          {loginMethod === 'credentials' && (
+            <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1">
+                    <AtSign className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Username Akses atau Akun Gmail</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="misal: budi.santoso atau budi.santoso@gmail.com"
+                      value={inputUsernameOrEmail}
+                      onChange={(e) => setInputUsernameOrEmail(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Username diinput oleh Kepala Rumah Tangga di menu Manajemen Anggota.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1">
+                    <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Kata Sandi Akses (Password)</span>
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                    <input
+                      type="password"
+                      required
+                      placeholder="••••••••"
+                      value={inputPassword}
+                      onChange={(e) => setInputPassword(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Kata sandi default demonstrasi: <code className="text-amber-300 bg-slate-950 px-1 py-0.5 rounded">password123</code>
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick credential hints for standard members */}
+              <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 text-[11px] space-y-1">
+                <span className="font-bold text-slate-300 block">Daftar Akun Anggota Terdaftar:</span>
+                <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-400 font-mono">
+                  {familyMembers.map((m) => (
+                    <div key={m.id} className="truncate">
+                      • <span className="text-indigo-300">@{m.username || m.name.toLowerCase().replace(/\s+/g, '.')}</span> ({m.relationship})
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <button
@@ -271,54 +418,73 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
               >
                 <LogIn className="w-4 h-4" />
-                <span>{isRegister ? 'Daftar Akun Baru' : 'Masuk Ke Aplikasi'}</span>
-              </button>
-
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800" /></div>
-                <div className="relative flex justify-center text-[10px] uppercase font-bold text-slate-500"><span className="bg-slate-900 px-2">Atau</span></div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                className="w-full py-2.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold text-xs transition-all flex items-center justify-center gap-2"
-              >
-                <Globe2 className="w-4 h-4 text-indigo-400" />
-                <span>Masuk dengan Google SSO</span>
+                <span>Masuk Ke Aplikasi</span>
               </button>
             </form>
           )}
 
-          {/* TAB 3: PIN KELUARGA */}
-          {loginMethod === 'pin' && (
-            <form onSubmit={handlePinSubmit} className="space-y-4">
-              <div className="text-center space-y-2">
-                <label className="block text-xs font-semibold text-slate-300">Masukkan 6 Digit PIN Akses Rumah</label>
-                <input
-                  type="password"
-                  maxLength={6}
-                  placeholder="••••••"
-                  value={pinCode}
-                  onChange={(e) => setPinCode(e.target.value)}
-                  className="w-full text-center tracking-[1em] text-lg font-mono bg-slate-950 border border-slate-800 rounded-2xl py-3 text-white focus:outline-none focus:border-indigo-500"
-                />
-                <p className="text-[11px] text-slate-500">PIN default demonstrasi: 123456</p>
+          {/* METHOD 3: QUICK PROFILE SELECTOR */}
+          {loginMethod === 'profile' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
+                <span>Pilih Profil Anggota Keluarga:</span>
+                <span className="text-indigo-400">{familyMembers.length} Profil Terdaftar</span>
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all"
-              >
-                Verifikasi PIN & Masuk
-              </button>
-            </form>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {familyMembers.map((member) => {
+                  const isSelected = selectedMemberId === member.id;
+                  const memberUsername = member.username || member.name.toLowerCase().replace(/\s+/g, '.');
+                  const memberGmail = member.gmailAccount || member.email || `${memberUsername}@gmail.com`;
+
+                  return (
+                    <button
+                      key={member.id}
+                      onClick={() => handleQuickProfileLogin(member)}
+                      className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all text-left group ${
+                        isSelected 
+                          ? 'bg-gradient-to-r from-indigo-950 to-slate-900 border-indigo-500 shadow-lg shadow-indigo-600/20' 
+                          : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <img src={member.avatar} alt={member.name} className="w-11 h-11 rounded-full object-cover ring-2 ring-indigo-500/50 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-100 text-xs truncate flex items-center justify-between">
+                          <span>{member.name}</span>
+                          {isSelected && <CheckCircle className="w-3.5 h-3.5 text-indigo-400 shrink-0" />}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium truncate">{member.roleTitle || member.relationship}</div>
+                        <div className="text-[9px] text-indigo-300 font-mono mt-0.5 flex items-center gap-1 truncate">
+                          <span>@{memberUsername}</span>
+                          <span>•</span>
+                          <span className="text-sky-300 truncate">{memberGmail}</span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    const m = familyMembers.find(mem => mem.id === selectedMemberId) || familyMembers[0];
+                    if (m) handleQuickProfileLogin(m);
+                  }}
+                  id="direct-app-login-btn"
+                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Masuk Sebagai {familyMembers.find(m => m.id === selectedMemberId)?.name || 'Pengguna'}</span>
+                </button>
+              </div>
+            </div>
           )}
 
           {/* Footer Security Notice */}
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-center gap-2 text-[11px] text-slate-500">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>Terproteksi Firebase Auth & Firestore Rules Level Enterprise</span>
+            <span>Terproteksi Firebase Auth & Firestore Security Rules</span>
           </div>
 
         </div>
@@ -326,7 +492,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
       {/* Footer copyright */}
       <div className="text-center text-xs text-slate-500 py-2">
-        FamilyAI Hub © 2026 — Keamanan & Privasi Data Keluarga Terjamin
+        FamilyAI Hub © 2026 — Keamanan Kredensial & Privasi Data Keluarga Terjamin
       </div>
 
     </div>

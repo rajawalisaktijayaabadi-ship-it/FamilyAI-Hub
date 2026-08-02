@@ -79,7 +79,7 @@ export const AIReportAndNotificationView: React.FC = () => {
               <p className="text-xs text-amber-300 font-semibold">{rep.periodText}</p>
 
               <ul className="space-y-1">
-                {rep.keyHighlights.map((hl, i) => (
+                {(rep.keyHighlights || []).map((hl, i) => (
                   <li key={i} className="text-[11px] text-slate-300 flex items-start gap-1.5">
                     <span className="text-emerald-400 font-bold">•</span>
                     <span>{hl}</span>

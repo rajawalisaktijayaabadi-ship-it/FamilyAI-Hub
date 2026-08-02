@@ -20,10 +20,18 @@ import {
   Award,
   ChevronRight,
   X,
-  UserCheck
+  UserCheck,
+  Upload,
+  Camera,
+  Image as ImageIcon,
+  KeyRound,
+  ShieldCheck,
+  Globe2,
+  AtSign
 } from 'lucide-react';
 import { FamilyMember, DetailedFamilyRole } from '../../types';
 import { useFamilyStore } from '../../store/useFamilyStore';
+import { useDummyDataStore, isDummyId } from '../../store/useDummyDataStore';
 
 export const FamilyView: React.FC = () => {
   const { 
@@ -61,6 +69,9 @@ export const FamilyView: React.FC = () => {
     gender: 'Laki-laki' | 'Perempuan';
     phone: string;
     email: string;
+    gmailAccount: string;
+    username: string;
+    password: string;
     avatar: string;
     statusText: string;
     status: 'aktif' | 'sekolah' | 'kerja' | 'istirahat' | 'offline';
@@ -72,7 +83,10 @@ export const FamilyView: React.FC = () => {
     birthDate: '2014-05-10',
     gender: 'Laki-laki',
     phone: '+6281234567890',
-    email: 'anak@familyai.hub',
+    email: '',
+    gmailAccount: '',
+    username: '',
+    password: 'password123',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
     statusText: 'Aktif di rumah',
     status: 'aktif'
@@ -92,8 +106,90 @@ export const FamilyView: React.FC = () => {
     familyPhoto: familyProfile.familyPhoto
   });
 
+  const { hideDummyData } = useDummyDataStore();
+
+  // Helper image compressor & file upload handler (base64 data URL)
+  const compressImageFile = (file: File, callback: (dataUrl: string) => void, maxDimension = 400) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          callback(dataUrl);
+        } else {
+          callback(event.target?.result as string);
+        }
+      };
+      img.onerror = () => {
+        callback(event.target?.result as string);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAvatarFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Ukuran file foto terlalu besar. Maksimal 10MB.');
+        return;
+      }
+      compressImageFile(file, (dataUrl) => {
+        setMemberForm(prev => ({ ...prev, avatar: dataUrl }));
+      }, 400);
+    }
+  };
+
+  const handleDirectMemberPhotoUpload = (memberId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Ukuran file foto terlalu besar. Maksimal 10MB.');
+        return;
+      }
+      compressImageFile(file, (dataUrl) => {
+        updateMember(memberId, { avatar: dataUrl });
+      }, 400);
+    }
+  };
+
+  const handleCoverFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Ukuran file foto terlalu besar. Maksimal 10MB.');
+        return;
+      }
+      compressImageFile(file, (dataUrl) => {
+        setProfileForm(prev => ({ ...prev, familyPhoto: dataUrl }));
+      }, 800);
+    }
+  };
+
   // Filtered members list
   const filteredMembers = familyMembers.filter((member) => {
+    if (hideDummyData && isDummyId(member.id)) return false;
+
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.relationship.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (member.email && member.email.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -120,6 +216,9 @@ export const FamilyView: React.FC = () => {
       gender: 'Laki-laki',
       phone: '+6281234567890',
       email: '',
+      gmailAccount: '',
+      username: '',
+      password: 'password123',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
       statusText: 'Aktif di rumah',
       status: 'aktif'
@@ -138,6 +237,9 @@ export const FamilyView: React.FC = () => {
       gender: m.gender || 'Laki-laki',
       phone: m.phone || '+6281234567890',
       email: m.email || '',
+      gmailAccount: m.gmailAccount || m.email || '',
+      username: m.username || m.name.toLowerCase().replace(/\s+/g, '.'),
+      password: m.password || 'password123',
       avatar: m.avatar,
       statusText: m.statusText,
       status: m.status || 'aktif'
@@ -149,6 +251,9 @@ export const FamilyView: React.FC = () => {
     e.preventDefault();
     if (!memberForm.name.trim()) return;
 
+    const emailToSave = memberForm.gmailAccount || memberForm.email;
+    const usernameToSave = memberForm.username || memberForm.name.toLowerCase().replace(/\s+/g, '.');
+
     if (editingMember) {
       updateMember(editingMember.id, {
         name: memberForm.name,
@@ -158,7 +263,10 @@ export const FamilyView: React.FC = () => {
         birthDate: memberForm.birthDate,
         gender: memberForm.gender,
         phone: memberForm.phone,
-        email: memberForm.email,
+        email: emailToSave,
+        gmailAccount: emailToSave,
+        username: usernameToSave,
+        password: memberForm.password || 'password123',
         avatar: memberForm.avatar,
         statusText: memberForm.statusText,
         status: memberForm.status,
@@ -173,7 +281,10 @@ export const FamilyView: React.FC = () => {
         birthDate: memberForm.birthDate,
         gender: memberForm.gender,
         phone: memberForm.phone,
-        email: memberForm.email,
+        email: emailToSave,
+        gmailAccount: emailToSave,
+        username: usernameToSave,
+        password: memberForm.password || 'password123',
         avatar: memberForm.avatar,
         statusText: memberForm.statusText,
         status: memberForm.status,
@@ -379,7 +490,7 @@ export const FamilyView: React.FC = () => {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="relative">
+                    <div className="relative group/avatar">
                       <img
                         src={member.avatar}
                         alt={member.name}
@@ -388,6 +499,19 @@ export const FamilyView: React.FC = () => {
                       <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-900 ${
                         member.isOnline ? 'bg-emerald-500' : 'bg-slate-500'
                       }`} />
+                      <label 
+                        className="absolute inset-0 bg-slate-950/80 opacity-0 group-hover/avatar:opacity-100 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all text-white text-[9px] font-bold gap-0.5 border border-indigo-500/50 shadow-lg"
+                        title="Ganti Foto Anggota Ini"
+                      >
+                        <Camera className="w-4 h-4 text-indigo-300" />
+                        <span>Ganti Foto</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={(e) => handleDirectMemberPhotoUpload(member.id, e)} 
+                        />
+                      </label>
                     </div>
                     <div>
                       <h3 className="font-bold text-white text-base truncate max-w-[150px]">{member.name}</h3>
@@ -397,10 +521,22 @@ export const FamilyView: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+                    <label
+                      className="p-2 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white transition-all cursor-pointer flex items-center justify-center"
+                      title="Ganti Foto Profil Anggota"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => handleDirectMemberPhotoUpload(member.id, e)} 
+                      />
+                    </label>
                     <button
                       onClick={() => handleOpenEdit(member)}
                       className="p-2 rounded-xl bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white transition-all"
-                      title="Edit Anggota"
+                      title="Edit Data & Foto Anggota"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
@@ -417,18 +553,30 @@ export const FamilyView: React.FC = () => {
                 <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800/80 space-y-2 text-xs">
                   <div className="flex items-center justify-between text-slate-300">
                     <span className="text-slate-400 flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>Telepon:</span>
+                      <AtSign className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Username:</span>
                     </span>
-                    <span className="font-medium text-slate-200">{member.phone || '+628123456789'}</span>
+                    <span className="font-mono text-indigo-300 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">
+                      @{member.username || member.name.toLowerCase().replace(/\s+/g, '.')}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between text-slate-300">
                     <span className="text-slate-400 flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Email:</span>
+                      <Globe2 className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Akun Gmail:</span>
                     </span>
-                    <span className="font-medium text-slate-200 truncate max-w-[140px]">{member.email || 'Email belum diisi'}</span>
+                    <span className="font-medium text-slate-200 truncate max-w-[140px]" title={member.gmailAccount || member.email}>
+                      {member.gmailAccount || member.email || 'Belum diisi'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span className="text-slate-400 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Telepon:</span>
+                    </span>
+                    <span className="font-medium text-slate-200">{member.phone || '+628123456789'}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-slate-300">
@@ -475,8 +623,23 @@ export const FamilyView: React.FC = () => {
               </div>
               <div className="flex justify-center gap-6 flex-wrap">
                 {familyMembers.filter(m => m.role === 'seniors' || m.detailedRole === 'Kakek' || m.detailedRole === 'Nenek').map(m => (
-                  <div key={m.id} className="bg-slate-950 border border-amber-500/40 p-4 rounded-2xl text-center w-48 shadow-lg space-y-2">
-                    <img src={m.avatar} alt={m.name} className="w-16 h-16 rounded-full mx-auto object-cover ring-2 ring-amber-400" />
+                  <div key={m.id} className="bg-slate-950 border border-amber-500/40 p-4 rounded-2xl text-center w-48 shadow-lg space-y-2 relative group/tree">
+                    <div className="relative w-16 h-16 mx-auto">
+                      <img src={m.avatar} alt={m.name} className="w-16 h-16 rounded-full mx-auto object-cover ring-2 ring-amber-400" />
+                      <label 
+                        className="absolute inset-0 bg-slate-950/80 opacity-0 group-hover/tree:opacity-100 rounded-full flex flex-col items-center justify-center cursor-pointer transition-all text-white text-[8px] font-bold border border-amber-400"
+                        title="Ganti Foto"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Ganti</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={(e) => handleDirectMemberPhotoUpload(m.id, e)} 
+                        />
+                      </label>
+                    </div>
                     <div className="font-bold text-white text-sm">{m.name}</div>
                     <div className="text-xs text-amber-300 font-semibold">{m.relationship} ({m.age} thn)</div>
                   </div>
@@ -493,8 +656,23 @@ export const FamilyView: React.FC = () => {
               </div>
               <div className="flex justify-center gap-6 flex-wrap">
                 {familyMembers.filter(m => m.role === 'parents' || m.detailedRole === 'Ayah' || m.detailedRole === 'Ibu').map(m => (
-                  <div key={m.id} className="bg-slate-950 border border-indigo-500/40 p-4 rounded-2xl text-center w-48 shadow-lg space-y-2">
-                    <img src={m.avatar} alt={m.name} className="w-16 h-16 rounded-full mx-auto object-cover ring-2 ring-indigo-400" />
+                  <div key={m.id} className="bg-slate-950 border border-indigo-500/40 p-4 rounded-2xl text-center w-48 shadow-lg space-y-2 relative group/tree">
+                    <div className="relative w-16 h-16 mx-auto">
+                      <img src={m.avatar} alt={m.name} className="w-16 h-16 rounded-full mx-auto object-cover ring-2 ring-indigo-400" />
+                      <label 
+                        className="absolute inset-0 bg-slate-950/80 opacity-0 group-hover/tree:opacity-100 rounded-full flex flex-col items-center justify-center cursor-pointer transition-all text-white text-[8px] font-bold border border-indigo-400"
+                        title="Ganti Foto"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-indigo-300" />
+                        <span>Ganti</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={(e) => handleDirectMemberPhotoUpload(m.id, e)} 
+                        />
+                      </label>
+                    </div>
                     <div className="font-bold text-white text-sm">{m.name}</div>
                     <div className="text-xs text-indigo-300 font-semibold">{m.relationship} ({m.age} thn)</div>
                   </div>
@@ -511,8 +689,23 @@ export const FamilyView: React.FC = () => {
               </div>
               <div className="flex justify-center gap-6 flex-wrap">
                 {familyMembers.filter(m => m.role === 'kids' || m.detailedRole === 'Anak').map(m => (
-                  <div key={m.id} className="bg-slate-950 border border-emerald-500/40 p-4 rounded-2xl text-center w-48 shadow-lg space-y-2">
-                    <img src={m.avatar} alt={m.name} className="w-16 h-16 rounded-full mx-auto object-cover ring-2 ring-emerald-400" />
+                  <div key={m.id} className="bg-slate-950 border border-emerald-500/40 p-4 rounded-2xl text-center w-48 shadow-lg space-y-2 relative group/tree">
+                    <div className="relative w-16 h-16 mx-auto">
+                      <img src={m.avatar} alt={m.name} className="w-16 h-16 rounded-full mx-auto object-cover ring-2 ring-emerald-400" />
+                      <label 
+                        className="absolute inset-0 bg-slate-950/80 opacity-0 group-hover/tree:opacity-100 rounded-full flex flex-col items-center justify-center cursor-pointer transition-all text-white text-[8px] font-bold border border-emerald-400"
+                        title="Ganti Foto"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-emerald-300" />
+                        <span>Ganti</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={(e) => handleDirectMemberPhotoUpload(m.id, e)} 
+                        />
+                      </label>
+                    </div>
                     <div className="font-bold text-white text-sm">{m.name}</div>
                     <div className="text-xs text-emerald-300 font-semibold">{m.relationship} ({m.age} thn)</div>
                   </div>
@@ -757,26 +950,110 @@ export const FamilyView: React.FC = () => {
                   />
                 </div>
 
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-slate-300 font-semibold">Email</label>
-                  <input
-                    type="email"
-                    value={memberForm.email}
-                    onChange={(e) => setMemberForm({ ...memberForm, email: e.target.value })}
-                    placeholder="email@domain.com"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-indigo-500"
-                  />
+                {/* Section Kredensial & Gmail Akses Masing-Masing Anggota */}
+                <div className="p-4 bg-indigo-950/40 border border-indigo-800/60 rounded-2xl space-y-3 sm:col-span-2 shadow-inner">
+                  <div className="flex items-center gap-2 text-indigo-300 font-bold text-xs border-b border-indigo-800/40 pb-2">
+                    <KeyRound className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Akses Login & Gmail Anggota (Diinput oleh Kepala Rumah Tangga)</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold flex items-center gap-1 text-[11px]">
+                        <AtSign className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Username Akses *</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={memberForm.username}
+                        onChange={(e) => setMemberForm({ ...memberForm, username: e.target.value })}
+                        placeholder="Contoh: ahmad.santoso"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-semibold flex items-center gap-1 text-[11px]">
+                        <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Password Akses *</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={memberForm.password}
+                        onChange={(e) => setMemberForm({ ...memberForm, password: e.target.value })}
+                        placeholder="Contoh: password123"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-slate-300 font-semibold flex items-center gap-1 text-[11px]">
+                        <Globe2 className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Akun Gmail Masing-Masing Anggota *</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={memberForm.gmailAccount}
+                        onChange={(e) => setMemberForm({ ...memberForm, gmailAccount: e.target.value, email: e.target.value })}
+                        placeholder="Contoh: ahmad.santoso@gmail.com"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-indigo-500"
+                      />
+                      <p className="text-[10px] text-slate-400">Akun Gmail ini digunakan anggota keluarga untuk login via Google SSO atau SSO Gmail.</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-slate-300 font-semibold">URL Foto Avatar</label>
-                  <input
-                    type="text"
-                    value={memberForm.avatar}
-                    onChange={(e) => setMemberForm({ ...memberForm, avatar: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-indigo-500"
-                  />
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-slate-300 font-semibold flex items-center justify-between">
+                    <span>Foto / Avatar Anggota Keluarga</span>
+                    <span className="text-[10px] text-slate-400">Unggah dari Perangkat atau Pakai URL</span>
+                  </label>
+                  
+                  <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                    {/* Preview Thumbnail */}
+                    <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-900 border-2 border-indigo-500/50 flex-shrink-0 flex items-center justify-center group">
+                      {memberForm.avatar ? (
+                        <img src={memberForm.avatar} alt="Avatar Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera className="w-6 h-6 text-slate-500" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 w-full space-y-2">
+                      <div className="flex items-center gap-2">
+                        <label className="cursor-pointer px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold text-xs transition-all flex items-center gap-1.5 shadow-md shadow-indigo-600/20">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Pilih Foto dari Galeri / HP</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handleAvatarFileUpload} 
+                            className="hidden" 
+                          />
+                        </label>
+                        {memberForm.avatar && (
+                          <button
+                            type="button"
+                            onClick={() => setMemberForm({ ...memberForm, avatar: '' })}
+                            className="px-2.5 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 rounded-xl text-xs"
+                          >
+                            Hapus Foto
+                          </button>
+                        )}
+                      </div>
+
+                      <input
+                        type="text"
+                        value={memberForm.avatar}
+                        onChange={(e) => setMemberForm({ ...memberForm, avatar: e.target.value })}
+                        placeholder="Atau tempel URL gambar (https://...)"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-1 sm:col-span-2">
@@ -938,14 +1215,49 @@ export const FamilyView: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-300 font-semibold">URL Foto Sampul Keluarga</label>
-                <input
-                  type="text"
-                  value={profileForm.familyPhoto}
-                  onChange={(e) => setProfileForm({ ...profileForm, familyPhoto: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-indigo-500"
-                />
+              <div className="space-y-2">
+                <label className="text-slate-300 font-semibold flex items-center justify-between">
+                  <span>Foto Sampul Keluarga</span>
+                  <span className="text-[10px] text-slate-400">Unggah dari Perangkat atau URL</span>
+                </label>
+
+                <div className="flex flex-col gap-3 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                  {profileForm.familyPhoto && (
+                    <div className="relative w-full h-32 rounded-xl overflow-hidden bg-slate-900 border border-slate-800">
+                      <img src={profileForm.familyPhoto} alt="Cover Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <label className="cursor-pointer px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-xs transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Unggah Foto Sampul</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleCoverFileUpload} 
+                        className="hidden" 
+                      />
+                    </label>
+                    {profileForm.familyPhoto && (
+                      <button
+                        type="button"
+                        onClick={() => setProfileForm({ ...profileForm, familyPhoto: '' })}
+                        className="px-2.5 py-2 bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 rounded-xl text-xs"
+                      >
+                        Hapus Foto
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={profileForm.familyPhoto}
+                    onChange={(e) => setProfileForm({ ...profileForm, familyPhoto: e.target.value })}
+                    placeholder="Atau tempel URL gambar sampul (https://...)"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">

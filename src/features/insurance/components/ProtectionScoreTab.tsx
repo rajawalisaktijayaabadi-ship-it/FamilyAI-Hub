@@ -145,7 +145,7 @@ export const ProtectionScoreTab: React.FC = () => {
           </h3>
 
           <div className="space-y-3">
-            {scoreData.recommendations.map((rec, idx) => (
+            {(scoreData.recommendations || []).map((rec, idx) => (
               <div key={idx} className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-1.5 text-xs">
                 <div className="font-bold text-slate-200 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-400" />

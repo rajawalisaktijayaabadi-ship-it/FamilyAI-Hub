@@ -5,13 +5,14 @@ import {
   Calendar, Clock, MapPin, Tag, User, AlertCircle, CheckCircle2, 
   Search, Filter, Paperclip, MoreHorizontal, Check 
 } from 'lucide-react';
-import { initialFamilyMembers } from '../../../data/mockData';
+import { useFamilyStore } from '../../../store/useFamilyStore';
 
 interface AgendaViewProps {
   events: CalendarEvent[];
 }
 
 export const AgendaView: React.FC<AgendaViewProps> = ({ events }) => {
+  const { familyMembers } = useFamilyStore();
   const { 
     searchQuery, setSearchQuery, 
     filterCategory, setFilterCategory, 
@@ -80,7 +81,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({ events }) => {
             className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="all">Semua Anggota</option>
-            {initialFamilyMembers.map((m) => (
+            {familyMembers.map((m) => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}
           </select>

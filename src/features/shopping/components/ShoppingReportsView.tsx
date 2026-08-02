@@ -73,7 +73,7 @@ export const ShoppingReportsView: React.FC = () => {
         </h3>
 
         <div className="space-y-4">
-          {budget.categoryBudgets.map((cat, idx) => {
+          {(budget?.categoryBudgets || []).map((cat, idx) => {
             const pct = Math.min(100, Math.round((cat.spent / cat.allocated) * 100));
 
             return (

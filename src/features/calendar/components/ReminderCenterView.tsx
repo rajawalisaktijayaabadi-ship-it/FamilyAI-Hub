@@ -5,11 +5,12 @@ import {
 } from 'lucide-react';
 import { useReminderStore } from '../stores/useReminderStore';
 import { useCalendarStore } from '../stores/useCalendarStore';
-import { initialFamilyMembers } from '../../../data/mockData';
+import { useFamilyStore } from '../../../store/useFamilyStore';
 
 export const ReminderCenterView: React.FC = () => {
   const { reminders, addReminder, toggleReminder, deleteReminder } = useReminderStore();
   const { events } = useCalendarStore();
+  const { familyMembers } = useFamilyStore();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [title, setTitle] = useState('');
@@ -24,7 +25,7 @@ export const ReminderCenterView: React.FC = () => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const assignedMember = initialFamilyMembers.find(m => m.id === assignedMemberId);
+    const assignedMember = familyMembers.find(m => m.id === assignedMemberId);
 
     addReminder({
       title,
@@ -198,7 +199,7 @@ export const ReminderCenterView: React.FC = () => {
                   onChange={(e) => setAssignedMemberId(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white"
                 >
-                  {initialFamilyMembers.map(m => (
+                  {familyMembers.map(m => (
                     <option key={m.id} value={m.id}>{m.name}</option>
                   ))}
                 </select>

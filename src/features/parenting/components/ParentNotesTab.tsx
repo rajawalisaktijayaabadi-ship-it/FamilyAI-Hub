@@ -65,7 +65,7 @@ export const ParentNotesTab: React.FC<ParentNotesTabProps> = ({
     setEditingNote(note);
     setTitle(note.title);
     setContent(note.content);
-    setTagsStr(note.tags.join(', '));
+    setTagsStr(note.tags?.join(', ') || '');
     setPrivacy(note.privacy);
     setIsEncrypted(note.isEncrypted);
     setShowAddModal(true);

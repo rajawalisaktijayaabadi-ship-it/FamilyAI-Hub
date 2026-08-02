@@ -13,6 +13,7 @@ import {
   X
 } from 'lucide-react';
 import { FamilyMember } from '../../types';
+import { ScrollableTabNav } from '../../components/common/ScrollableTabNav';
 import { useMealStore } from '../../stores/useMealStore';
 import { MealDashboardTab } from './components/MealDashboardTab';
 import { MealPlannerTab } from './components/MealPlannerTab';
@@ -52,11 +53,10 @@ export const MealCenterModule: React.FC<MealCenterModuleProps> = ({
 
       {/* Main Module Navigation Bar */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto">
-          
+        <ScrollableTabNav>
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeTab === 'dashboard'
                 ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-md shadow-amber-500/20'
                 : 'text-slate-300 hover:bg-slate-800'
@@ -68,7 +68,7 @@ export const MealCenterModule: React.FC<MealCenterModuleProps> = ({
 
           <button
             onClick={() => setActiveTab('planner')}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeTab === 'planner'
                 ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-600/20'
                 : 'text-slate-300 hover:bg-slate-800'
@@ -80,7 +80,7 @@ export const MealCenterModule: React.FC<MealCenterModuleProps> = ({
 
           <button
             onClick={() => setActiveTab('recipes')}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeTab === 'recipes'
                 ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 shadow-md shadow-amber-500/20'
                 : 'text-slate-300 hover:bg-slate-800'
@@ -92,7 +92,7 @@ export const MealCenterModule: React.FC<MealCenterModuleProps> = ({
 
           <button
             onClick={() => setActiveTab('nutrition')}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeTab === 'nutrition'
                 ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md shadow-rose-600/20'
                 : 'text-slate-300 hover:bg-slate-800'
@@ -104,7 +104,7 @@ export const MealCenterModule: React.FC<MealCenterModuleProps> = ({
 
           <button
             onClick={() => setActiveTab('kitchen')}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${
               activeTab === 'kitchen'
                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
                 : 'text-slate-300 hover:bg-slate-800'
@@ -113,8 +113,7 @@ export const MealCenterModule: React.FC<MealCenterModuleProps> = ({
             <Home className="w-4 h-4 text-emerald-400" />
             <span>Kitchen</span>
           </button>
-
-        </div>
+        </ScrollableTabNav>
 
         {/* Action Triggers */}
         <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   initialFamilyMembers, 
   initialMoodEntries,
@@ -25,7 +25,8 @@ import {
 } from './types';
 
 import { HeaderNavbar } from './components/HeaderNavbar';
-import { NavigationTabs } from './components/NavigationTabs';
+import { NavigationTabs, tabItems } from './components/NavigationTabs';
+import { getRoleAllowedTabs } from './utils/rolePermissions';
 import { SmartTVDashboard } from './components/SmartTVDashboard';
 
 import { DashboardView } from './components/views/DashboardView';
@@ -55,15 +56,25 @@ import { LandingPageView } from './components/LandingPageView';
 import { LoginView } from './components/LoginView';
 
 import { ShieldAlert, X, PhoneCall, Radio, Heart } from 'lucide-react';
+import { useDummyDataStore, isDummyId } from './store/useDummyDataStore';
+import { useFamilyStore } from './store/useFamilyStore';
 
 export default function App() {
   const [appFlow, setAppFlow] = useState<'landing' | 'login' | 'app'>('landing');
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [viewMode, setViewMode] = useState<ViewMode>('pc');
   
-  // State Collections
-  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(initialFamilyMembers);
-  const [currentMember, setCurrentMember] = useState<FamilyMember>(initialFamilyMembers[0]);
+  // Use persistent Zustand Family Store as single source of truth
+  const { familyMembers, addMember, updateMember } = useFamilyStore();
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('m1');
+
+  // Derive current active member dynamically so avatar changes propagate instantly everywhere
+  const currentMember = familyMembers.find(m => m.id === selectedMemberId) || familyMembers[0] || initialFamilyMembers[0];
+
+  const handleSelectMember = (member: FamilyMember) => {
+    setSelectedMemberId(member.id);
+  };
+
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>(initialMoodEntries);
   const [tasks, setTasks] = useState<TaskItem[]>(initialTasks);
   const [budget, setBudget] = useState<BudgetItem[]>(initialBudget);
@@ -73,11 +84,43 @@ export default function App() {
   const [smartDevices, setSmartDevices] = useState<SmartDevice[]>(initialSmartDevices);
   const [mealPlans, setMealPlans] = useState<MealPlanDay[]>(initialMealPlans);
 
+  // Dummy Data filter state
+  const { hideDummyData } = useDummyDataStore();
+  const effectiveMembers = hideDummyData ? familyMembers.filter(m => !isDummyId(m.id)) : familyMembers;
+  const effectiveTasks = hideDummyData ? tasks.filter(t => !isDummyId(t.id)) : tasks;
+  const effectiveShoppingItems = hideDummyData ? shoppingItems.filter(s => !isDummyId(s.id)) : shoppingItems;
+  const effectiveSmartDevices = hideDummyData ? smartDevices.filter(d => !isDummyId(d.id)) : smartDevices;
+
   // Modals & Overlays
   const [showSOSModal, setShowSOSModal] = useState<boolean>(false);
   const [showSmartTVOverlay, setShowSmartTVOverlay] = useState<boolean>(false);
 
-  // Handlers
+  const [roleNotice, setRoleNotice] = useState<string | null>(null);
+
+  // Validate active tab when selected member or active tab changes
+  useEffect(() => {
+    const allowed = getRoleAllowedTabs(currentMember);
+    if (!allowed.includes(activeTab)) {
+      const tabObj = tabItems.find(t => t.id === activeTab);
+      const tabName = tabObj ? tabObj.label : activeTab;
+      setActiveTab('dashboard');
+      setRoleNotice(`Akses modul "${tabName}" dibatasi untuk role ${currentMember.roleTitle || currentMember.name}. Dialihkan ke Dashboard.`);
+      const timer = setTimeout(() => setRoleNotice(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedMemberId, activeTab, currentMember]);
+
+  const handleTabChange = (newTab: ActiveTab) => {
+    const allowed = getRoleAllowedTabs(currentMember);
+    if (!allowed.includes(newTab)) {
+      const tabObj = tabItems.find(t => t.id === newTab);
+      const tabName = tabObj ? tabObj.label : newTab;
+      setRoleNotice(`Modul "${tabName}" dibatasi untuk role ${currentMember.roleTitle || currentMember.name}. Memerlukan akses Orang Tua.`);
+      const timer = setTimeout(() => setRoleNotice(null), 4000);
+      return;
+    }
+    setActiveTab(newTab);
+  };
   const handleToggleTask = (id: string) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };
@@ -119,7 +162,7 @@ export default function App() {
   };
 
   const handleAddMember = (newMember: FamilyMember) => {
-    setFamilyMembers(prev => [...prev, newMember]);
+    addMember(newMember);
   };
 
   const handleAddMoodEntry = (entry: MoodEntry) => {
@@ -127,7 +170,7 @@ export default function App() {
   };
 
   const handleMoodUpdated = (memberId: string, newMood: string) => {
-    setFamilyMembers(prev => prev.map(m => m.id === memberId ? { ...m, currentMood: newMood } : m));
+    updateMember(memberId, { mood: newMood as any });
   };
 
   // View Container Class based on ViewMode
@@ -156,8 +199,8 @@ export default function App() {
   if (appFlow === 'login') {
     return (
       <LoginView
-        familyMembers={familyMembers}
-        onSelectMember={setCurrentMember}
+        familyMembers={effectiveMembers}
+        onSelectMember={handleSelectMember}
         onLoginSuccess={() => setAppFlow('app')}
         onBackToLanding={() => setAppFlow('landing')}
       />
@@ -170,11 +213,11 @@ export default function App() {
       {/* Header Navigation Bar */}
       <HeaderNavbar
         currentMember={currentMember}
-        familyMembers={familyMembers}
+        familyMembers={effectiveMembers}
         viewMode={viewMode}
         appFlow={appFlow}
         onNavigateFlow={(flow) => setAppFlow(flow)}
-        onSelectMember={setCurrentMember}
+        onSelectMember={handleSelectMember}
         onChangeViewMode={(mode) => {
           setViewMode(mode);
           if (mode === 'tv') setShowSmartTVOverlay(true);
@@ -190,17 +233,33 @@ export default function App() {
           {/* Left Sidebar Navigation */}
           <NavigationTabs
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
+            currentMember={currentMember}
           />
 
           {/* View Router */}
           <main className="flex-1 p-4 sm:p-6 pb-20 min-w-0 overflow-x-hidden">
+            {roleNotice && (
+              <div className="mb-4 p-3 bg-amber-500/15 border border-amber-500/30 rounded-2xl text-amber-300 text-xs font-semibold flex items-center justify-between gap-3 animate-fade-in shadow-lg">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{roleNotice}</span>
+                </div>
+                <button 
+                  onClick={() => setRoleNotice(null)}
+                  className="text-amber-400 hover:text-white text-xs font-bold px-2 py-0.5 rounded bg-amber-500/20"
+                >
+                  Tutup
+                </button>
+              </div>
+            )}
             {activeTab === 'dashboard' && (
               <DashboardView
-                familyMembers={familyMembers}
-                tasks={tasks}
+                currentMember={currentMember}
+                familyMembers={effectiveMembers}
+                tasks={effectiveTasks}
                 onToggleTask={handleToggleTask}
-                smartDevices={smartDevices}
+                smartDevices={effectiveSmartDevices}
                 onToggleDevice={handleToggleSmartDevice}
                 mealPlan={mealPlans[0]}
                 onNavigateTab={(tab) => setActiveTab(tab)}
@@ -221,7 +280,7 @@ export default function App() {
             )}
 
             {activeTab === 'assistant' && (
-              <AIAssistantView currentMember={currentMember} familyMembers={familyMembers} />
+              <AIAssistantView currentMember={currentMember} familyMembers={effectiveMembers} />
             )}
 
             {activeTab === 'mood' && (
@@ -233,7 +292,7 @@ export default function App() {
             )}
 
             {activeTab === 'psychology' && (
-              <PsychologyView familyMembers={familyMembers} />
+              <PsychologyView familyMembers={effectiveMembers} />
             )}
 
             {activeTab === 'parenting' && (
@@ -245,29 +304,29 @@ export default function App() {
             )}
 
             {activeTab === 'health' && (
-              <HealthView familyMembers={familyMembers} />
+              <HealthView familyMembers={effectiveMembers} />
             )}
 
             {activeTab === 'insurance' && (
-              <InsuranceView familyMembers={familyMembers} />
+              <InsuranceView familyMembers={effectiveMembers} />
             )}
 
             {activeTab === 'finance' && (
               <FinanceView
                 budget={budget}
-                familyMembers={familyMembers}
+                familyMembers={effectiveMembers}
                 onAddBudgetItem={handleAddBudgetItem}
               />
             )}
 
             {activeTab === 'meals' && (
-              <MealPlannerView mealPlans={mealPlans} familyMembers={familyMembers} />
+              <MealPlannerView mealPlans={mealPlans} familyMembers={effectiveMembers} />
             )}
 
             {activeTab === 'shopping' && (
               <ShoppingView
-                shoppingItems={shoppingItems}
-                familyMembers={familyMembers}
+                shoppingItems={effectiveShoppingItems}
+                familyMembers={effectiveMembers}
                 onToggleItem={handleToggleShoppingItem}
                 onAddItem={handleAddShoppingItem}
                 onDeleteItem={handleDeleteShoppingItem}

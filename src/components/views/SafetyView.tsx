@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   MapPin, ShieldAlert, ShieldCheck, Battery, Navigation, Radio, PhoneCall,
   History, Clock, Home, GraduationCap, Briefcase, Building, Trees, Plus,
-  CheckCircle2, Filter, Sparkles, X, ChevronRight, Compass
+  CheckCircle2, Filter, Sparkles, X, ChevronRight, Compass, LocateFixed, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { FamilyMember, LocationHistoryLog } from '../../types';
 import { useFamilyStore } from '../../store/useFamilyStore';
+import { useDummyDataStore, isDummyId } from '../../store/useDummyDataStore';
 
 interface SafetyViewProps {
   familyMembers: FamilyMember[];
@@ -21,10 +22,130 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
   const [newAddressDetails, setNewAddressDetails] = useState<string>('');
   const [newCategory, setNewCategory] = useState<'Rumah' | 'Sekolah' | 'Kantor' | 'Les/Kursus' | 'Publik/Olahraga' | 'Lainnya'>('Publik/Olahraga');
 
-  // Filter members list based on selected filter
+  // Real GPS Geolocation tracking states
+  const [gpsStatus, setGpsStatus] = useState<'idle' | 'requesting' | 'active' | 'denied' | 'error'>('idle');
+  const [gpsErrorMsg, setGpsErrorMsg] = useState<string>('');
+  const [liveCoords, setLiveCoords] = useState<{ lat: number; lng: number; accuracy: number; timestamp: string } | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+
+  const { hideDummyData } = useDummyDataStore();
+
+  // Cleanup watcher on unmount
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
+
+  // Handler to request GPS Permission and activate real-time GPS tracking
+  const handleRequestGpsPermission = (targetMemberId?: string) => {
+    if (!('geolocation' in navigator)) {
+      setGpsStatus('error');
+      setGpsErrorMsg('Layanan Geolocation tidak didukung oleh browser ini.');
+      return;
+    }
+
+    setGpsStatus('requesting');
+    setGpsErrorMsg('');
+
+    const options: PositionOptions = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    };
+
+    const handleSuccess = (pos: GeolocationPosition) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const accuracy = pos.coords.accuracy;
+      const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+      setLiveCoords({
+        lat,
+        lng,
+        accuracy,
+        timestamp: timeStr
+      });
+      setGpsStatus('active');
+
+      const memberIdToUpdate = targetMemberId || checkInMemberId || familyMembers[0]?.id || 'm1';
+      const gpsPlaceName = `Live GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+      const gpsAddress = `Akurasi ±${Math.round(accuracy)}m • Koordinat Peramban Aktif`;
+
+      updateMemberLocation(
+        memberIdToUpdate,
+        gpsPlaceName,
+        gpsAddress,
+        'Publik/Olahraga'
+      );
+    };
+
+    const handleError = (err: GeolocationPositionError) => {
+      setGpsStatus('denied');
+      if (err.code === err.PERMISSION_DENIED) {
+        setGpsErrorMsg('Izin lokasi ditolak oleh pengguna/browser. Mohon izinkan akses GPS pada pengaturan peramban.');
+      } else if (err.code === err.POSITION_UNAVAILABLE) {
+        setGpsErrorMsg('Informasi lokasi GPS tidak dapat ditemukan.');
+      } else if (err.code === err.TIMEOUT) {
+        setGpsErrorMsg('Permintaan lokasi GPS mengalami batas waktu (timeout).');
+      } else {
+        setGpsErrorMsg(err.message || 'Gagal mendapatkan izin lokasi GPS.');
+      }
+    };
+
+    // Single fetch and watch setup
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        handleSuccess(pos);
+        // Start live watch position
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+        }
+        watchIdRef.current = navigator.geolocation.watchPosition(handleSuccess, handleError, options);
+      },
+      handleError,
+      options
+    );
+  };
+
+  const handleFillCheckInFromGPS = () => {
+    if (!('geolocation' in navigator)) {
+      alert('Geolocation tidak didukung peramban.');
+      return;
+    }
+
+    setGpsStatus('requesting');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const acc = pos.coords.accuracy;
+        const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+        setLiveCoords({ lat, lng, accuracy: acc, timestamp: timeStr });
+        setGpsStatus('active');
+        setNewPlaceName(`Koordinat GPS Live (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
+        setNewAddressDetails(`Akurasi ±${Math.round(acc)} meter • Terdeteksi otomatis via Peramban`);
+        setNewCategory('Publik/Olahraga');
+      },
+      (err) => {
+        setGpsStatus('denied');
+        alert('Gagal mengambil lokasi GPS: ' + (err.message || 'Izin ditolak'));
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
+  // Filter members list based on selected filter and dummy data toggle
+  const availableMembers = hideDummyData 
+    ? familyMembers.filter(m => !isDummyId(m.id)) 
+    : familyMembers;
+
   const displayedMembers = selectedMemberFilter === 'all' 
-    ? familyMembers 
-    : familyMembers.filter(m => m.id === selectedMemberFilter);
+    ? availableMembers 
+    : availableMembers.filter(m => m.id === selectedMemberFilter);
 
   // Helper for category badge styling and icons
   const getCategoryBadge = (category?: string) => {
@@ -116,6 +237,88 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
             <span>Kirim Sinyal Darurat (SOS)</span>
           </button>
         </div>
+      </div>
+
+      {/* GPS PERMISSION & REAL-TIME TRACKER CARD */}
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 text-white shadow-xl space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className={`p-3 rounded-2xl border ${
+              gpsStatus === 'active' 
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                : gpsStatus === 'denied' || gpsStatus === 'error'
+                ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
+            }`}>
+              <LocateFixed className="w-6 h-6 animate-pulse" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-sm text-white">Izin Lokasi & GPS Geolocation Peramban</h3>
+                {gpsStatus === 'active' && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    Izin Diberikan & Live
+                  </span>
+                )}
+                {gpsStatus === 'denied' && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 flex items-center gap-1">
+                    Izin Ditolak
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-300">
+                {gpsStatus === 'active' && liveCoords
+                  ? `Koordinat Presisi: Lat ${liveCoords.lat.toFixed(5)}, Lng ${liveCoords.lng.toFixed(5)} (Akurasi: ±${Math.round(liveCoords.accuracy)} meter) • Diperbarui pukul ${liveCoords.timestamp}`
+                  : gpsStatus === 'requesting'
+                  ? 'Meminta izin lokasi dari peramban... Harap izinkan pop-up peramban.'
+                  : gpsStatus === 'denied' || gpsStatus === 'error'
+                  ? gpsErrorMsg || 'Akses lokasi ditolak. Klik tombol di bawah untuk meminta kembali izin GPS peramban.'
+                  : 'Klik tombol di samping untuk memberikan izin lokasi dan melacak posisi GPS perangkat secara real-time.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => handleRequestGpsPermission()}
+              disabled={gpsStatus === 'requesting'}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg ${
+                gpsStatus === 'active'
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20 border border-emerald-400/40'
+                  : gpsStatus === 'requesting'
+                  ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
+                  : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20 border border-indigo-400/40'
+              }`}
+            >
+              {gpsStatus === 'requesting' ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Meminta Izin...</span>
+                </>
+              ) : gpsStatus === 'active' ? (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Perbarui GPS Realtime</span>
+                </>
+              ) : (
+                <>
+                  <LocateFixed className="w-4 h-4" />
+                  <span>Minta Izin GPS Peramban</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {gpsStatus === 'denied' && (
+          <div className="p-3 bg-rose-950/60 border border-rose-800/80 rounded-2xl flex items-center gap-2.5 text-xs text-rose-200">
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>
+              <strong>Panduan Izin:</strong> Jika peramban memblokir pop-up lokasi, klik ikon gembok/lokasi di address bar browser Anda lalu ubah setelan izin lokasi menjadi "Allow" (Izinkan).
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -488,7 +691,17 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
 
               {/* Quick Preset Buttons */}
               <div className="space-y-1.5">
-                <label className="font-semibold text-slate-400 text-[11px] block">Rekomendasi Tempat Cepat:</label>
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-slate-400 text-[11px] block">Rekomendasi Tempat & GPS Live:</label>
+                  <button
+                    type="button"
+                    onClick={handleFillCheckInFromGPS}
+                    className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5"
+                  >
+                    <LocateFixed className="w-3.5 h-3.5" />
+                    <span>Ambil Lokasi GPS Saya</span>
+                  </button>
+                </div>
                 <div className="flex flex-wrap gap-1.5">
                   {presetLocations.map((preset, idx) => (
                     <button

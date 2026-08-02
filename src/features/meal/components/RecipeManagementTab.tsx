@@ -316,7 +316,7 @@ export const RecipeManagementTab: React.FC = () => {
                 <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
                   <h5 className="font-bold text-amber-400 uppercase text-[11px]">Bahan-bahan Diperlukan:</h5>
                   <ul className="space-y-1">
-                    {selectedRecipe.ingredients.map((ing, idx) => (
+                    {(selectedRecipe.ingredients || []).map((ing, idx) => (
                       <li key={idx} className="flex items-center justify-between text-slate-300">
                         <span>{ing.name}</span>
                         <span className="font-mono text-amber-300">{ing.quantity} {ing.unit}</span>
@@ -328,7 +328,7 @@ export const RecipeManagementTab: React.FC = () => {
                 <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
                   <h5 className="font-bold text-emerald-400 uppercase text-[11px]">Langkah Memasak:</h5>
                   <ol className="space-y-2">
-                    {selectedRecipe.steps.map((st, idx) => (
+                    {(selectedRecipe.steps || []).map((st, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
                         <span className="font-bold text-emerald-400">{st.stepNumber}.</span>
                         <span>{st.instruction}</span>

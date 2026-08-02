@@ -33,11 +33,17 @@ export const DevelopmentGrowthTab: React.FC<DevelopmentGrowthTabProps> = ({
   const [notes, setNotes] = useState('');
 
   const childRecords = growthRecords.filter((g) => g.childId === child.id);
-  const latestRecord = childRecords[0] || {
-    heightCm: 138.5,
-    weightKg: 32.4,
-    bmi: 16.9,
-    headCircumferenceCm: 52.1
+  const latestHeight = childRecords[0]?.heightCm || child.heightCm || 140;
+  const latestWeight = childRecords[0]?.weightKg || child.weightKg || 35;
+  const latestHead = childRecords[0]?.headCircumferenceCm || 52;
+  const heightM = latestHeight / 100;
+  const latestBmi = childRecords[0]?.bmi || Number((latestWeight / (heightM * heightM)).toFixed(1));
+
+  const latestRecord = {
+    heightCm: latestHeight,
+    weightKg: latestWeight,
+    bmi: latestBmi,
+    headCircumferenceCm: latestHead
   };
 
   const handleSaveRecord = (e: React.FormEvent) => {

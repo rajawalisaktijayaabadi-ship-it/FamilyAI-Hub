@@ -159,33 +159,45 @@ Berikan saran parenting komprehensif dalam JSON:
 
 // AI Education & Homework Solver
 app.post("/api/ai/education", async (req, res) => {
-  const { subject, gradeLevel, question, type } = req.body;
+  const { subject, gradeLevel, question, type, materi, topic, difficulty, questionCount } = req.body;
   
   if (type === "quiz") {
-    const prompt = `Buatkan 3 soal kuis interaktif pelajaran ${subject} untuk tingkat ${gradeLevel}.
-Format JSON:
+    const topicName = materi || topic || subject || "Latihan Umum";
+    const subjName = subject || topicName;
+    const count = Number(questionCount) || 3;
+    const diff = difficulty || "Sedang";
+
+    const prompt = `Buatkan ${count} soal kuis pilihan ganda interaktif untuk mata pelajaran ${subjName} dengan materi/topik "${topicName}". Jenjang sekolah: ${gradeLevel || "Umum"}. Tingkat kesulitan: ${diff}.
+
+Sertakan 4 pilihan jawaban untuk tiap soal (index 0, 1, 2, 3), tentukan jawaban yang benar (correctIndex 0-3), dan berikan penjelasan edukatif yang ringkas dan ramah anak.
+
+Format JSON persis:
 {
-  "topic": "${subject}",
+  "subject": "${subjName}",
+  "topic": "${topicName}",
+  "difficulty": "${diff}",
   "questions": [
     {
       "id": 1,
-      "question": "teks pertanyaan",
-      "options": ["pilihan A", "pilihan B", "pilihan C", "pilihan D"],
+      "question": "teks pertanyaan yang jelas",
+      "options": ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D"],
       "correctIndex": 0,
-      "explanation": "penjelasan singkat"
+      "explanation": "penjelasan edukatif mengapa jawaban ini benar"
     }
   ]
 }`;
-    const quiz = await generateAIJson(prompt, "Anda adalah Pembuat Kuis Pendidikan Anak Interaktif.");
+    const quiz = await generateAIJson(prompt, "Anda adalah Pembuat Kuis Pendidikan Anak Interaktif dan Edukatif.");
     return res.json(quiz || {
-      topic: subject,
+      subject: subjName,
+      topic: topicName,
+      difficulty: diff,
       questions: [
         {
           id: 1,
-          question: `Berapakah hasil dari 12 + 15?`,
+          question: `Berapakah hasil latihan dasar dari 12 + 15?`,
           options: ["25", "27", "30", "22"],
           correctIndex: 1,
-          explanation: "12 + 15 = 27"
+          explanation: "12 + 15 = 27. Pertambahan puluhan dan satuan."
         }
       ]
     });
@@ -252,82 +264,139 @@ Format JSON:
 // AI Meal Planner & Recipe Generator
 app.post("/api/ai/meal-planner", async (req, res) => {
   const { availableIngredients, dietaryPreferences, mealType, familyMembersCount } = req.body;
-  const prompt = `Buatkan resep masakan keluarga ramah gizi:
-Bahan yang tersedia di kulkas: ${availableIngredients ? availableIngredients.join(", ") : "Bebas/Bahan umum"}
-Preferensi Diet: ${dietaryPreferences || "Sehat Seimbang, Tidak Pedas untuk Anak"}
-Jenis Makanan: ${mealType || "Makan Malam Keluarga"}
-Jumlah Anggota: ${familyMembersCount || 4} Porsi
+  const ingredientsList = Array.isArray(availableIngredients) && availableIngredients.length > 0 
+    ? availableIngredients.join(", ") 
+    : "Dada Ayam Fillet, Wortel Organik, Brokoli Segar, Bawang Putih, Telur";
 
-Format JSON:
+  const prompt = `Kreasikan resep masakan keluarga Indonesia yang lezat, bernutrisi, dan hemat (Zero Waste Kulkas):
+Bahan yang dipilih/tersedia di kulkas: ${ingredientsList}
+Target & Preferensi Diet: "${dietaryPreferences || "Sehat Seimbang (Ramah Anak)"}"
+Jenis Waktu Makan: "${mealType || "Makan Siang"}"
+Porsi Keluarga: ${familyMembersCount || 4} orang
+
+Buatkan resep nyata yang memanfaatkan bahan-bahan tersebut secara optimal.
+Format JSON persis seperti ini:
 {
-  "recipeTitle": "Nama Makanan Mewah & Lezat",
-  "prepTime": "20 menit",
-  "cookTime": "25 menit",
-  "estimatedCalories": "350 kcal/porsi",
-  "ingredientsRequired": ["bahan 1", "bahan 2", "bahan 3"],
-  "stepByStepInstructions": ["Langkah 1", "Langkah 2", "Langkah 3"],
-  "kidFriendlyTip": "cara penyajian menarik untuk anak",
-  "nutritionHighlights": "keunggulan vitamin/protein menu ini"
+  "title": "Nama Masakan Menarik & Menggugah Selera",
+  "prepTime": "12 Menit",
+  "cookTime": "18 Menit",
+  "calories": "340 kcal/porsi",
+  "category": "Makan Siang",
+  "difficulty": "Mudah",
+  "servings": 4,
+  "ingredientsUsed": [
+    "Bahan Terpakai 1 (Takaran)",
+    "Bahan Terpakai 2 (Takaran)"
+  ],
+  "missingIngredients": [
+    "Bumbu Tambahan Dasar 1",
+    "Bumbu Tambahan Dasar 2"
+  ],
+  "steps": [
+    "Langkah persiapan dan memasak 1",
+    "Langkah 2",
+    "Langkah 3",
+    "Langkah penyajian 4"
+  ],
+  "kidTip": "Tips penyajian atau rasa yang menarik & disukai anak-anak",
+  "seniorTip": "Tips tekstur atau bumbu yang aman & lembut bagi lansia",
+  "nutritionHighlight": "Analisis nutrisi ringkas dan manfaat kesehatan menu ini"
 }`;
 
-  const sysInstruction = "Anda adalah AI Master Chef & Ahli Gizi Makanan Keluarga.";
+  const sysInstruction = "Anda adalah Master Chef & Ahli Gizi Kuliner Keluarga Indonesia. Buatkan resep kreatif, lezat, realistis, dan ramah keluarga.";
   const mealData = await generateAIJson(prompt, sysInstruction);
-  res.json(mealData || {
-    recipeTitle: "Ayam Tumis Mentega Wijen & Sayur Pelangi",
-    prepTime: "15 menit",
-    cookTime: "20 menit",
-    estimatedCalories: "420 kcal/porsi",
-    ingredientsRequired: ["500g Dada Ayam Fillet", "3 siung Bawang Putih", "1 buah Wortel potong Dadu", "Brokoli segar", "Sauce Mentega & Wijen"],
-    stepByStepInstructions: [
-      "Tumis bawang putih sampai harum dengan sedikit mentega.",
-      "Masukan potong ayam, masak hingga berubah warna.",
-      "Masukan wortel dan brokoli, aduk rata lalu bumbui.",
-      "Sajikan selagi hangat dengan taburan wijen sangrai."
-    ],
-    kidFriendlyTip: "Bentuk wortel menjadi bintang atau bunga agar anak makin bersemangat makan sayur!",
-    nutritionHighlights: "Tinggi protein untuk masa pertumbuhan anak dan kaya serat dari sayuran."
-  });
+
+  if (mealData && (mealData.title || mealData.recipeTitle)) {
+    res.json({
+      title: mealData.title || mealData.recipeTitle,
+      prepTime: mealData.prepTime || "15 Menit",
+      cookTime: mealData.cookTime || "20 Menit",
+      calories: mealData.calories || mealData.estimatedCalories || "350 kcal/porsi",
+      category: mealData.category || mealType || "Makan Siang",
+      difficulty: mealData.difficulty || "Mudah",
+      servings: mealData.servings || familyMembersCount || 4,
+      ingredientsUsed: Array.isArray(mealData.ingredientsUsed) ? mealData.ingredientsUsed : (Array.isArray(mealData.ingredientsRequired) ? mealData.ingredientsRequired : availableIngredients),
+      missingIngredients: Array.isArray(mealData.missingIngredients) ? mealData.missingIngredients : ["Garam", "Minyak Goreng / Zaitun", "Lada"],
+      steps: Array.isArray(mealData.steps) ? mealData.steps : (Array.isArray(mealData.stepByStepInstructions) ? mealData.stepByStepInstructions : ["Tumis bumbu hingga harum", "Masukan bahan utama", "Masak hingga matang dan sajikan"]),
+      kidTip: mealData.kidTip || mealData.kidFriendlyTip || "Potong sayuran dengan bentuk unik agar anak tertarik!",
+      seniorTip: mealData.seniorTip || "Sesuaikan tingkat keempukan daging dan sayur untuk kemudahan mengunyah.",
+      nutritionHighlight: mealData.nutritionHighlight || mealData.nutritionHighlights || "Kaya protein berkualitas dan serat alami untuk imunitas tubuh."
+    });
+  } else {
+    res.json({
+      title: `Tumis Spesial ${ingredientsList.split(',')[0] || 'Kulkas'} Aromatic Garlic`,
+      prepTime: "12 Menit",
+      cookTime: "15 Menit",
+      calories: "320 kcal/porsi",
+      category: "Makan Siang",
+      difficulty: "Mudah",
+      servings: 4,
+      ingredientsUsed: (availableIngredients || ["Dada Ayam Fillet", "Wortel Organik", "Brokoli"]).map((i: string) => `${i} (Secukupnya)`),
+      missingIngredients: ["Bawang Putih", "Garam Low Sodium", "Minyak Zaitun"],
+      steps: [
+        "Potong dan cuci bersih semua bahan utama sesuai ukuran porsi keluarga.",
+        "Tumis irisan bawang putih hingga wangi dan berwarna keemasan.",
+        "Masukan bahan utama secara berurutan sesuai tingkat kematangan.",
+        "Bumbui secara seimbang, masak hingga matang segar dan sajikan hangat."
+      ],
+      kidTip: "Ajak anak menghias piring saji agar lebih bersemangat makan sayur!",
+      seniorTip: "Gunakan garam secukupnya dan pastikan tekstur masakan tidak terlalu keras.",
+      nutritionHighlight: "Mengoptimalkan bahan kulkas tersedia tanpa ada yang terbuang (Zero Waste)."
+    });
+  }
 });
 
 // AI Finance Advisor
 app.post("/api/ai/finance-advisor", async (req, res) => {
-  const { monthlyIncome, totalExpenses, financialGoals, debtStatus } = req.body;
-  const prompt = `Berikan penasihat keuangan keluarga modern:
-Pemasukan Bulanan: Rp ${monthlyIncome}
-Pengeluaran Bulanan: Rp ${totalExpenses}
-Target Keuangan: "${financialGoals}"
-Status Utang/Cicilan: "${debtStatus || "Tidak Ada"}"
+  const { prompt: userPrompt, context, monthlyIncome, totalExpenses, financialGoals, debtStatus } = req.body;
 
-Format JSON:
+  const income = context?.totalIncome || monthlyIncome || 15000000;
+  const expense = context?.totalExpense || totalExpenses || 9000000;
+  const userQuery = userPrompt || financialGoals || "Analisis perencanaan keuangan dan kesehatan arus kas keluarga.";
+
+  const prompt = `Pertanyaan/Fokus Konsultasi Keuangan Keluarga: "${userQuery}"
+Konteks Finansial:
+- Pemasukan Bulanan: Rp ${Number(income).toLocaleString('id-ID')}
+- Pengeluaran Bulanan: Rp ${Number(expense).toLocaleString('id-ID')}
+- Aset/Investasi Total: Rp ${Number(context?.totalInvestmentValue || 0).toLocaleString('id-ID')}
+- Sisa Utang: Rp ${Number(context?.totalDebtsRemaining || 0).toLocaleString('id-ID')}
+- Jumlah Anggota Keluarga: ${context?.familyMembersCount || 4}
+
+Berikan analisis keuangan mendalam, praktis, dan rekomendasi konkrit dalam format JSON persis seperti ini:
 {
-  "cashflowStatus": "Positif / Imbang / Defisit",
-  "savingsPercentage": "20%",
-  "recommendedBudgetSplit": {
-    "needs": "50%",
-    "wants": "30%",
-    "savingsAndInvest": "20%"
-  },
-  "actionableTips": ["tip 1", "tip 2", "tip 3"],
-  "goalFeasibility": "analisis realistis pencapaian target"
+  "summary": "Analisis ringkas dan komprehensif mengenai kondisi keuangan, arus kas, dan jawaban langsung yang jelas atas pertanyaan pengguna.",
+  "healthRating": "Sehat / Cukup / Perlu Perhatian (misal: 'Sangat Sehat (85/100)')",
+  "actionSteps": [
+    "Langkah aksi konkret 1",
+    "Langkah aksi konkret 2",
+    "Langkah aksi konkret 3"
+  ],
+  "riskAlerts": [
+    "Peringatan potensi risiko atau perhatian tambahan 1",
+    "Peringatan potensi risiko 2"
+  ]
 }`;
 
-  const sysInstruction = "Anda adalah AI Financial Planner Spesialis Keuangan Keluarga.";
+  const sysInstruction = "Anda adalah Perencana Keuangan Keluarga Senior (Certified Financial Planner / CFP) Gemini AI yang ramah, bijak, solutif, dan profesional.";
   const finData = await generateAIJson(prompt, sysInstruction);
-  res.json(finData || {
-    cashflowStatus: "Positif",
-    savingsPercentage: "20%",
-    recommendedBudgetSplit: {
-      needs: "50% (Rp " + (monthlyIncome * 0.5).toLocaleString("id-ID") + ")",
-      wants: "30% (Rp " + (monthlyIncome * 0.3).toLocaleString("id-ID") + ")",
-      savingsAndInvest: "20% (Rp " + (monthlyIncome * 0.2).toLocaleString("id-ID") + ")"
-    },
-    actionableTips: [
-      "Alokasikan tabungan di awal bulan begitu gaji diterima (Pay Yourself First).",
-      "Siapkan dana darurat keluarga setara 6 kali pengeluaran bulanan.",
-      "Evaluasi langganan bulanan yang tidak terpakai secara berkala."
-    ],
-    goalFeasibility: "Sangat realistis tercapai dengan konsistensi 6-12 bulan ke depan."
-  });
+
+  if (finData && (finData.summary || finData.actionSteps)) {
+    res.json(finData);
+  } else {
+    res.json({
+      summary: `Berdasarkan analisis keuangan keluarga dengan pemasukan Rp ${Number(income).toLocaleString('id-ID')} dan pengeluaran Rp ${Number(expense).toLocaleString('id-ID')}, arus kas Anda berada pada kondisi surplus yang positif. Alokasi pengeluaran Anda tergolong baik untuk memenuhi kebutuhan pokok keluarga.`,
+      healthRating: "Sehat & Cukup Stabil (82/100)",
+      actionSteps: [
+        "Otomatiskan alokasi tabungan dana darurat minimal 20% dari pemasukan setiap bulan (Pay Yourself First).",
+        "Siapkan target dana darurat ideal setara 6-12 kali pengeluaran rutin bulanan keluarga.",
+        "Pertimbangkan mengalihkan sebagian cadangan tunai ke instrumen investasi berisiko rendah seperti Reksa Dana Pasar Uang atau Emas."
+      ],
+      riskAlerts: [
+        "Pastikan rasio total cicilan/utang bulanan tidak melebihi 30% dari total pendapatan bersih.",
+        "Disiplin mencatat pengeluaran harian kecil agar budget bulanan tidak terlewati."
+      ]
+    });
+  }
 });
 
 // AI Insurance & Protection Analyzer

@@ -23,6 +23,7 @@ import { AchievementAlbumsTab } from './components/AchievementAlbumsTab';
 import { AnalyticsReportTab } from './components/AnalyticsReportTab';
 
 import { AddMediaModal } from './components/modals/AddMediaModal';
+import { ScrollableTabNav } from '../../components/common/ScrollableTabNav';
 import { AddAlbumModal } from './components/modals/AddAlbumModal';
 import { AISmartOrganizerModal } from './components/modals/AISmartOrganizerModal';
 import { PhotoBookExportModal } from './components/modals/PhotoBookExportModal';
@@ -58,11 +59,11 @@ export const MemoriesCenterModule: React.FC = () => {
     <div className="space-y-6">
       
       {/* Top Navigation Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 flex items-center justify-between gap-2 overflow-x-auto scrollbar-thin">
-        <div className="flex items-center gap-1 min-w-max">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-lg">
+        <ScrollableTabNav>
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'dashboard'
                 ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-lg'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -74,7 +75,7 @@ export const MemoriesCenterModule: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('gallery')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'gallery'
                 ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-lg'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -86,7 +87,7 @@ export const MemoriesCenterModule: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('albums')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'albums'
                 ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-lg'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -98,7 +99,7 @@ export const MemoriesCenterModule: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('timeline')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'timeline'
                 ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-lg'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -110,7 +111,7 @@ export const MemoriesCenterModule: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('storybook')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'storybook'
                 ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-lg'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -122,7 +123,7 @@ export const MemoriesCenterModule: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('map')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'map'
                 ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-lg'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -134,7 +135,7 @@ export const MemoriesCenterModule: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('favorites')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'favorites'
                 ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-lg'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -146,7 +147,7 @@ export const MemoriesCenterModule: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('achievements')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'achievements'
                 ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-lg'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -158,7 +159,7 @@ export const MemoriesCenterModule: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'analytics'
                 ? 'bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-lg'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -167,7 +168,7 @@ export const MemoriesCenterModule: React.FC = () => {
             <BarChart3 className="w-4 h-4 text-cyan-400" />
             <span>Analytics</span>
           </button>
-        </div>
+        </ScrollableTabNav>
       </div>
 
       {/* Main Tab Content Render */}

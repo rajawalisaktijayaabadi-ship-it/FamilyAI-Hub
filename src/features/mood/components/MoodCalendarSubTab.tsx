@@ -172,11 +172,11 @@ export const MoodCalendarSubTab: React.FC = () => {
                 </p>
               </div>
 
-              {selectedDayCheckIn.gratitudeItems?.length > 0 && (
+              {(selectedDayCheckIn.gratitudeItems?.length || 0) > 0 && (
                 <div>
                   <label className="text-xs font-bold text-amber-300 block mb-1">Disyukuri Hari Ini:</label>
                   <ul className="text-xs text-slate-300 space-y-1 list-disc list-inside bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                    {selectedDayCheckIn.gratitudeItems.map((g, idx) => (
+                    {(selectedDayCheckIn.gratitudeItems || []).map((g, idx) => (
                       <li key={idx}>{g}</li>
                     ))}
                   </ul>

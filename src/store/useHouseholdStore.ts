@@ -288,7 +288,7 @@ export const useHouseholdStore = create<HouseholdState>((set, get) => ({
     set((state) => ({
       tasks: state.tasks.map((t) => {
         if (t.id === taskId && t.checklist) {
-          const updatedChecklist = t.checklist.map((item, idx) =>
+          const updatedChecklist = (t.checklist || []).map((item, idx) =>
             idx === itemIdx ? { ...item, done: !item.done } : item
           );
           const allDone = updatedChecklist.every((item) => item.done);

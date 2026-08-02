@@ -56,7 +56,7 @@ export const TravelHealthSafetyTab: React.FC = () => {
               <div>
                 <span className="font-bold text-amber-400 block mb-1">💊 Obat Rutin & Kit P3K:</span>
                 <ul className="space-y-1 text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">
-                  {health.medications.map((m, idx) => (
+                  {(health.medications || []).map((m, idx) => (
                     <li key={idx} className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                       <span>{m}</span>
@@ -68,7 +68,7 @@ export const TravelHealthSafetyTab: React.FC = () => {
               <div>
                 <span className="font-bold text-indigo-400 block mb-1">💉 Status Vaksinasi Perjalanan:</span>
                 <ul className="space-y-1 text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">
-                  {health.vaccinesPlaceholder.map((v, idx) => (
+                  {(health.vaccinesPlaceholder || []).map((v, idx) => (
                     <li key={idx} className="flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                       <span>{v}</span>
@@ -80,7 +80,7 @@ export const TravelHealthSafetyTab: React.FC = () => {
               <div>
                 <span className="font-bold text-rose-400 block mb-1">🏥 Rumah Sakit Rujukan Destinasi:</span>
                 <div className="space-y-2">
-                  {health.destinationHospitalsPlaceholder.map((hosp, idx) => (
+                  {(health.destinationHospitalsPlaceholder || []).map((hosp, idx) => (
                     <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800">
                       <div className="font-bold text-white">{hosp.name}</div>
                       <div className="text-[11px] text-slate-400">{hosp.address}</div>

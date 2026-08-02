@@ -1,5 +1,6 @@
 import React from 'react';
 import { useMoodStore, MoodSubTab } from './stores/useMoodStore';
+import { useFamilyStore } from '../../store/useFamilyStore';
 import { MoodHeaderBar } from './components/MoodHeaderBar';
 import { MoodOverviewSubTab } from './components/MoodOverviewSubTab';
 import { MoodJournalSubTab } from './components/MoodJournalSubTab';
@@ -10,13 +11,22 @@ import { MoodRemindersSubTab } from './components/MoodRemindersSubTab';
 import { BiometricPlaceholdersCard } from './components/BiometricPlaceholdersCard';
 import { MoodIntegrationHub } from './components/MoodIntegrationHub';
 import { DailyCheckInModal } from './components/DailyCheckInModal';
+import { FamilyMember } from '../../types';
 
 interface MoodCenterModuleProps {
   initialSubTab?: MoodSubTab;
+  currentMember?: FamilyMember;
 }
 
-export const MoodCenterModule: React.FC<MoodCenterModuleProps> = ({ initialSubTab }) => {
-  const { activeSubTab, setActiveSubTab } = useMoodStore();
+export const MoodCenterModule: React.FC<MoodCenterModuleProps> = ({ initialSubTab, currentMember }) => {
+  const { activeSubTab, setActiveSubTab, syncFamilyMembersWithMoods } = useMoodStore();
+  const { familyMembers } = useFamilyStore();
+
+  React.useEffect(() => {
+    if (familyMembers && familyMembers.length > 0) {
+      syncFamilyMembersWithMoods(familyMembers);
+    }
+  }, [familyMembers, syncFamilyMembersWithMoods]);
 
   React.useEffect(() => {
     if (initialSubTab) {
@@ -43,7 +53,7 @@ export const MoodCenterModule: React.FC<MoodCenterModuleProps> = ({ initialSubTa
         </div>
       )}
 
-      {activeSubTab === 'journal' && <MoodJournalSubTab />}
+      {activeSubTab === 'journal' && <MoodJournalSubTab currentMember={currentMember} />}
 
       {activeSubTab === 'calendar' && <MoodCalendarSubTab />}
 
@@ -56,7 +66,7 @@ export const MoodCenterModule: React.FC<MoodCenterModuleProps> = ({ initialSubTa
       {activeSubTab === 'biometrics' && <BiometricPlaceholdersCard />}
 
       {/* Shared Modals */}
-      <DailyCheckInModal />
+      <DailyCheckInModal currentMember={currentMember} />
     </div>
   );
 };

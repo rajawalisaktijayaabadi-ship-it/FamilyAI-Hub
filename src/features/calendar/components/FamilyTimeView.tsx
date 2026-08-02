@@ -4,10 +4,11 @@ import {
   Circle, Calendar, Clock, MapPin, Users, Sparkles 
 } from 'lucide-react';
 import { usePlannerStore } from '../stores/usePlannerStore';
-import { initialFamilyMembers } from '../../../data/mockData';
+import { useFamilyStore } from '../../../store/useFamilyStore';
 
 export const FamilyTimeView: React.FC = () => {
   const { familyTimePlans, addFamilyTimePlan, toggleChecklistItem } = usePlannerStore();
+  const { familyMembers } = useFamilyStore();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [activityType, setActivityType] = useState<'Movie Night' | 'Dinner' | 'Vacation' | 'Game Night' | 'Picnic' | 'Custom'>('Movie Night');
@@ -35,7 +36,7 @@ export const FamilyTimeView: React.FC = () => {
       date,
       time,
       location,
-      participants: initialFamilyMembers.map(m => m.name),
+      participants: familyMembers.map(m => m.name),
       preparedChecklist: [
         { id: `chk-${Date.now()}-1`, item: 'Konfirmasi ketersediaan anggota', completed: true },
         { id: `chk-${Date.now()}-2`, item: 'Siapkan hidangan/camilan', completed: false }

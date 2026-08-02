@@ -101,7 +101,7 @@ export const MemoriesView: React.FC<MemoriesViewProps> = ({
 
               <div className="space-y-3 pt-2 border-t border-slate-800/80">
                 <div className="flex flex-wrap gap-1.5">
-                  {m.tags.map((tag, idx) => (
+                  {(m.tags || []).map((tag, idx) => (
                     <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-fuchsia-950/80 text-fuchsia-300 border border-fuchsia-500/30">
                       #{tag}
                     </span>

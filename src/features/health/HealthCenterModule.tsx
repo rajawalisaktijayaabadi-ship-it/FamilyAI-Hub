@@ -23,6 +23,7 @@ import { EmergencyInfoTab } from './components/EmergencyInfoTab';
 import { AIHealthCoachModal } from './components/AIHealthCoachModal';
 import { EmergencyCardModal } from './components/EmergencyCardModal';
 import { WearableIntegrationModal } from './components/WearableIntegrationModal';
+import { ScrollableTabNav } from '../../components/common/ScrollableTabNav';
 
 interface HealthCenterModuleProps {
   familyMembers: FamilyMember[];
@@ -82,26 +83,28 @@ export const HealthCenterModule: React.FC<HealthCenterModuleProps> = ({ familyMe
       />
 
       {/* Navigation Sub-Tabs Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none shadow-lg">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-lg">
+        <ScrollableTabNav>
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.key;
 
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as HealthTabKey)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-                isActive
-                  ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as HealthTabKey)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 ${
+                  isActive
+                    ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </ScrollableTabNav>
       </div>
 
       {/* Main Tab Content Display */}

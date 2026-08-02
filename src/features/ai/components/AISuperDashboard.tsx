@@ -96,7 +96,7 @@ export const AISuperDashboard: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {todayBriefing.bulletBriefings.map((note, idx) => (
+            {(todayBriefing?.bulletBriefings || []).map((note, idx) => (
               <div key={idx} className="p-3.5 bg-slate-950 border border-slate-800/80 rounded-2xl flex items-start gap-3 hover:border-indigo-500/40 transition-all">
                 <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl mt-0.5">
                   <Activity className="w-4 h-4" />
@@ -115,7 +115,7 @@ export const AISuperDashboard: React.FC = () => {
               <span>AI Decision Support (Dukungan Keputusan)</span>
             </h5>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {todayBriefing.decisionSupportNotes.map((item, idx) => (
+              {(todayBriefing?.decisionSupportNotes || []).map((item, idx) => (
                 <div key={idx} className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold text-white">{item.topic}</span>

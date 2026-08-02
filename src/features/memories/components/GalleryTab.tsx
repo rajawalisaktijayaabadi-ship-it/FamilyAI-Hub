@@ -225,7 +225,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({
 
               {/* Tagged Members Badges */}
               <div className="flex flex-wrap gap-1">
-                {photo.taggedMemberIds.map((mem) => (
+                {(photo.taggedMemberIds || []).map((mem) => (
                   <span key={mem} className="text-[10px] px-2 py-0.5 rounded-full bg-slate-950 text-amber-300 border border-slate-800 font-semibold flex items-center gap-1">
                     <User className="w-2.5 h-2.5 text-amber-400" />
                     {mem}
@@ -365,7 +365,7 @@ export const GalleryTab: React.FC<GalleryTabProps> = ({
               <div className="pt-2">
                 <span className="text-xs font-bold text-slate-400 block mb-2">Anggota Terkait:</span>
                 <div className="flex flex-wrap gap-2">
-                  {selectedPhotoModal.taggedMemberIds.map(mem => (
+                  {(selectedPhotoModal.taggedMemberIds || []).map(mem => (
                     <span key={mem} className="px-3 py-1 rounded-full bg-slate-950 text-amber-300 text-xs font-bold border border-slate-800 flex items-center gap-1">
                       <User className="w-3 h-3 text-amber-400" /> {mem}
                     </span>

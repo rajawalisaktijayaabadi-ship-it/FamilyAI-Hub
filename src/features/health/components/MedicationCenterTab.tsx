@@ -135,7 +135,7 @@ export const MedicationCenterTab: React.FC<MedicationCenterTabProps> = ({
                   </p>
                   <p className="text-[11px] text-slate-400 flex items-center gap-1 pt-1">
                     <Clock className="w-3.5 h-3.5 text-rose-400" />
-                    <span>Jam Konsumsi: {med.timesOfDay.join(', ') || 'Sesuai Kebutuhan'}</span>
+                    <span>Jam Konsumsi: {med.timesOfDay?.join(', ') || 'Sesuai Kebutuhan'}</span>
                   </p>
                 </div>
 

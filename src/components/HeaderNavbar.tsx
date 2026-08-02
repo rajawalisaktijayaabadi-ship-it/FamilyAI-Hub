@@ -10,9 +10,13 @@ import {
   Volume2, 
   Bell, 
   Bot,
-  HeartPulse
+  HeartPulse,
+  Eye,
+  EyeOff,
+  Database
 } from 'lucide-react';
 import { FamilyMember, DeviceViewMode } from '../types';
+import { useDummyDataStore } from '../store/useDummyDataStore';
 
 interface HeaderNavbarProps {
   currentMember: FamilyMember;
@@ -37,6 +41,8 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   appFlow = 'app',
   onNavigateFlow
 }) => {
+  const { hideDummyData, toggleHideDummyData } = useDummyDataStore();
+
   return (
     <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white px-4 lg:px-8 py-3 transition-all">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
@@ -123,6 +129,30 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
               <span>Smart TV</span>
             </button>
           </div>
+
+          {/* Toggle Sembunyikan / Tampilkan Data Dummy */}
+          <button
+            onClick={toggleHideDummyData}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+              hideDummyData 
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30 ring-1 ring-amber-500/30' 
+                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
+            }`}
+            title={hideDummyData ? 'Data Dummy Sedang Disembunyikan (Klik untuk Menampilkan)' : 'Sembunyikan Data Dummy/Contoh'}
+            id="toggle-dummy-data-btn"
+          >
+            {hideDummyData ? (
+              <>
+                <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                <span>Data Dummy: Tersembunyi</span>
+              </>
+            ) : (
+              <>
+                <Eye className="w-3.5 h-3.5 text-slate-400" />
+                <span>Sembunyikan Data Dummy</span>
+              </>
+            )}
+          </button>
 
           {/* Quick Voice Assistant Launcher */}
           <button

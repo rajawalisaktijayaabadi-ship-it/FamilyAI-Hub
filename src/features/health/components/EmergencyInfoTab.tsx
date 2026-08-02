@@ -87,7 +87,7 @@ export const EmergencyInfoTab: React.FC<EmergencyInfoTabProps> = ({
               <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
                 <span className="font-bold text-amber-400 uppercase tracking-wider block">⚠️ Alergi Reaksi Cepat / Obat Fatal</span>
                 <div className="flex flex-wrap gap-2">
-                  {emergency.allergies.map((a, i) => (
+                  {(emergency.allergies || []).map((a, i) => (
                     <span key={i} className="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 font-bold">
                       {a}
                     </span>
@@ -98,7 +98,7 @@ export const EmergencyInfoTab: React.FC<EmergencyInfoTabProps> = ({
               <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
                 <span className="font-bold text-rose-400 uppercase tracking-wider block">Kondisi Kronis & Obat Rutin</span>
                 <p className="text-slate-200">
-                  Penyakit: <strong>{emergency.chronicConditions.join(', ') || 'Tidak Ada'}</strong> • Obat: <strong>{emergency.routineMeds.join(', ') || 'Tidak Ada'}</strong>
+                  Penyakit: <strong>{emergency.chronicConditions?.join(', ') || 'Tidak Ada'}</strong> • Obat: <strong>{emergency.routineMeds?.join(', ') || 'Tidak Ada'}</strong>
                 </p>
               </div>
             </div>

@@ -75,7 +75,7 @@ export const FavoriteStoresManager: React.FC = () => {
               <div>
                 <span className="text-slate-400 font-medium block mb-1">Kategori Terbaik:</span>
                 <div className="flex flex-wrap gap-1.5">
-                  {store.bestCategories.map((cat, idx) => (
+                  {(store.bestCategories || []).map((cat, idx) => (
                     <span key={idx} className="px-2 py-0.5 rounded-full bg-slate-950 text-slate-300 border border-slate-800 text-[10px]">
                       {cat}
                     </span>

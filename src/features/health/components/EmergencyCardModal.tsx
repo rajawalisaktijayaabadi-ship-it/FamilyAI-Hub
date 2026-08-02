@@ -79,7 +79,7 @@ export const EmergencyCardModal: React.FC<EmergencyCardModalProps> = ({
           <p className="text-[10px] text-slate-400 font-mono">Pindai QR untuk rekam medis darurat paramedis</p>
 
           <div className="bg-slate-950/80 p-3 rounded-2xl border border-slate-800 text-left text-xs space-y-1">
-            <p className="text-slate-300">Alergi Kritis: <strong className="text-amber-400">{emergency.allergies.join(', ') || 'Nihil'}</strong></p>
+            <p className="text-slate-300">Alergi Kritis: <strong className="text-amber-400">{emergency.allergies?.join(', ') || 'Nihil'}</strong></p>
             <p className="text-slate-300">Kontak Darurat: <strong className="text-rose-400">{emergency.primaryContact.name} ({emergency.primaryContact.phone})</strong></p>
           </div>
         </div>

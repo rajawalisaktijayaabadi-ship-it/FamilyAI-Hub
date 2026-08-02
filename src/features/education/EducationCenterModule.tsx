@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   GraduationCap,
   School,
@@ -18,6 +18,7 @@ import {
 import { useEducationStore } from '../../store/useEducationStore';
 import { useFamilyStore } from '../../store/useFamilyStore';
 import { EducationHeader, ChildEducationSelector } from './components/EducationHeader';
+import { ScrollableTabNav } from '../../components/common/ScrollableTabNav';
 import { EducationDashboardTab } from './components/EducationDashboardTab';
 import { ChildEducationProfileTab } from './components/ChildEducationProfileTab';
 import { SubjectManagementTab } from './components/SubjectManagementTab';
@@ -39,13 +40,20 @@ export const EducationCenterModule: React.FC = () => {
   const { familyMembers } = useFamilyStore();
 
   const childrenList = familyMembers
-    .filter((m) => m.relationship === 'Anak' || m.role === 'kids' || m.age < 18)
+    .filter((m) => m.relationship === 'Anak' || m.role === 'kids' || (m.roleTitle || '').toLowerCase().includes('anak') || m.age < 18)
     .map((m) => ({
       id: m.id,
       name: m.name,
+      age: m.age || 10,
       avatar: m.avatar,
-      grade: Object.values(profiles).find((p) => p.childId === m.id)?.grade || 'SD / SMP'
+      grade: profiles[m.id]?.grade || (m.age >= 15 ? 'SMA Kelas 2' : 'SD Kelas 5')
     }));
+
+  useEffect(() => {
+    if (childrenList.length > 0 && !childrenList.some((c) => c.id === selectedChildId)) {
+      setSelectedChildId(childrenList[0].id);
+    }
+  }, [childrenList, selectedChildId, setSelectedChildId]);
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [assistantHwId, setAssistantHwId] = useState<string | undefined>(undefined);
@@ -90,25 +98,27 @@ export const EducationCenterModule: React.FC = () => {
       />
 
       {/* Horizontal Nav Tabs Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 border ${
-                isActive
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-400/50 shadow-md shadow-indigo-500/20'
-                  : 'bg-slate-950/60 text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-800/60'
-              }`}
-            >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2">
+        <ScrollableTabNav>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 border ${
+                  isActive
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-400/50 shadow-md shadow-indigo-500/20'
+                    : 'bg-slate-950/60 text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </ScrollableTabNav>
       </div>
 
       {/* Tab Contents */}

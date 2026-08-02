@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   Brain, 
   LayoutDashboard, 
@@ -12,13 +12,50 @@ import {
   Trophy, 
   BookOpen, 
   FileText,
-  Database
+  Database,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { usePsychologyStore } from '../stores/usePsychologyStore';
 import { PsychologySubTab } from '../types/psychologyTypes';
 
 export const PsychologyHeaderNav: React.FC = () => {
   const { activeSubTab, setActiveSubTab } = usePsychologyStore();
+  const navRef = useRef<HTMLDivElement>(null);
+
+  // Mouse Drag to Scroll State
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (navRef.current) {
+      const scrollAmount = 260;
+      navRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!navRef.current) return;
+    setIsMouseDown(true);
+    setStartX(e.pageX - navRef.current.offsetLeft);
+    setScrollLeft(navRef.current.scrollLeft);
+  };
+
+  const handleMouseLeaveOrUp = () => {
+    setIsMouseDown(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isMouseDown || !navRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - navRef.current.offsetLeft;
+    const walk = (x - startX) * 1.8;
+    navRef.current.scrollLeft = scrollLeft - walk;
+  };
 
   const navItems: { id: PsychologySubTab; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -57,25 +94,53 @@ export const PsychologyHeaderNav: React.FC = () => {
         </div>
       </div>
 
-      {/* Sub Navigation Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {navItems.map((item) => {
-          const isActive = activeSubTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveSubTab(item.id)}
-              className={`px-3.5 py-2 rounded-2xl text-xs font-semibold flex items-center gap-2 whitespace-nowrap transition-all ${
-                isActive
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/25 font-bold scale-[1.02]'
-                  : 'bg-slate-950/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800/80'
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+      {/* Sub Navigation Bar with Scroll Arrows & Drag-to-Scroll */}
+      <div className="relative group">
+        {/* Left Scroll Button */}
+        <button
+          onClick={() => handleScroll('left')}
+          className="absolute -left-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-slate-800/90 text-purple-300 border border-purple-500/30 shadow-xl hover:bg-purple-600 hover:text-white transition-all opacity-80 group-hover:opacity-100"
+          title="Geser Kiri"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {/* Scrollable Container */}
+        <div 
+          ref={navRef}
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeaveOrUp}
+          onMouseUp={handleMouseLeaveOrUp}
+          onMouseMove={handleMouseMove}
+          className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-purple-900/40 scrollbar-track-slate-950/60 scroll-smooth px-2 cursor-grab active:cursor-grabbing select-none"
+        >
+          {navItems.map((item) => {
+            const isActive = activeSubTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveSubTab(item.id)}
+                className={`px-3.5 py-2 rounded-2xl text-xs font-semibold flex items-center gap-2 whitespace-nowrap transition-all shrink-0 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/25 font-bold scale-[1.02]'
+                    : 'bg-slate-950/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800/80'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Scroll Button */}
+        <button
+          onClick={() => handleScroll('right')}
+          className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-slate-800/90 text-purple-300 border border-purple-500/30 shadow-xl hover:bg-purple-600 hover:text-white transition-all opacity-80 group-hover:opacity-100"
+          title="Geser Kanan"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );

@@ -25,6 +25,7 @@ import { InsuranceDocumentCenterTab } from './components/InsuranceDocumentCenter
 import { InsuranceReminderTab } from './components/InsuranceReminderTab';
 import { AIPolicyExplainerModal } from './components/AIPolicyExplainerModal';
 import { FamilyMember } from '../../types';
+import { ScrollableTabNav } from '../../components/common/ScrollableTabNav';
 
 interface InsuranceCenterModuleProps {
   familyMembers: FamilyMember[];
@@ -58,26 +59,28 @@ export const InsuranceCenterModule: React.FC<InsuranceCenterModuleProps> = ({ fa
       />
 
       {/* 2. Navigation Tabs Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-2 flex items-center gap-1 overflow-x-auto scrollbar-none shadow-lg">
-        {tabs.map((tab) => {
-          const IconComp = tab.icon;
-          const isActive = activeTab === tab.id;
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-2 shadow-lg">
+        <ScrollableTabNav>
+          {tabs.map((tab) => {
+            const IconComp = tab.icon;
+            const isActive = activeTab === tab.id;
 
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-                isActive
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md scale-102'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-              }`}
-            >
-              <IconComp className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md scale-102'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+              >
+                <IconComp className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </ScrollableTabNav>
       </div>
 
       {/* 3. Main Active Tab Content */}

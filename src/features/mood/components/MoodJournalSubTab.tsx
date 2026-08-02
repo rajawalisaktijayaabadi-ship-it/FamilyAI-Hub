@@ -16,8 +16,13 @@ import {
 import { useMoodStore } from '../stores/useMoodStore';
 import { MOOD_META_MAP } from '../utils/moodData';
 import { SupportedMoodType, PrivacyLevel } from '../types/moodTypes';
+import { FamilyMember } from '../../../types';
 
-export const MoodJournalSubTab: React.FC = () => {
+interface MoodJournalSubTabProps {
+  currentMember?: FamilyMember;
+}
+
+export const MoodJournalSubTab: React.FC<MoodJournalSubTabProps> = ({ currentMember: propMember }) => {
   const { 
     getFilteredJournals, 
     journalSearchQuery, 
@@ -41,12 +46,17 @@ export const MoodJournalSubTab: React.FC = () => {
 
   const filteredJournals = getFilteredJournals();
 
-  const currentMember = familyMoods[0] || {
+  const currentMember = propMember ? {
+    memberId: propMember.id,
+    memberName: propMember.name,
+    detailedRole: propMember.roleTitle || propMember.detailedRole || propMember.relationship || 'Anggota Keluarga',
+    avatar: propMember.avatar
+  } : (familyMoods[0] || {
     memberId: 'mem_1',
     memberName: 'Budi Santoso',
     detailedRole: 'Ayah',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
-  };
+  });
 
   const handleCreateJournal = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,6 +263,9 @@ export const MoodJournalSubTab: React.FC = () => {
         ) : (
           filteredJournals.map((j) => {
             const meta = MOOD_META_MAP[j.mood] || MOOD_META_MAP.happy;
+            const matchMember = familyMoods.find(m => m.memberId === j.memberId || m.memberName.toLowerCase() === j.memberName.toLowerCase());
+            const displayAvatar = matchMember?.avatar || j.memberAvatar;
+
             return (
               <div 
                 key={j.id} 
@@ -260,7 +273,7 @@ export const MoodJournalSubTab: React.FC = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <img src={j.memberAvatar} alt={j.memberName} className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-500/30" />
+                    <img src={displayAvatar} alt={j.memberName} className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-500/30" />
                     <div>
                       <div className="font-bold text-sm text-white flex items-center gap-2">
                         <span>{j.title}</span>
@@ -306,7 +319,7 @@ export const MoodJournalSubTab: React.FC = () => {
 
                 {/* Tags */}
                 <div className="flex flex-wrap items-center gap-2 pt-1">
-                  {j.tags.map((tag) => (
+                  {(j.tags || []).map((tag) => (
                     <span key={tag} className="text-[10px] px-2.5 py-0.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
                       #{tag}
                     </span>

@@ -226,7 +226,7 @@ export const FinancialProfileTab: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {financialProfile.bankAccounts.map((b) => (
+          {(financialProfile.bankAccounts || []).map((b) => (
             <div key={b.id} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 relative group">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-extrabold text-emerald-400">{b.bankName}</span>
@@ -265,7 +265,7 @@ export const FinancialProfileTab: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {financialProfile.eWallets.map((ew) => (
+          {(financialProfile.eWallets || []).map((ew) => (
             <div key={ew.id} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 relative group">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-extrabold text-amber-400">{ew.provider}</span>
@@ -302,7 +302,7 @@ export const FinancialProfileTab: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {financialProfile.creditCards.map((cc) => (
+          {(financialProfile.creditCards || []).map((cc) => (
             <div key={cc.id} className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 relative group">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-extrabold text-indigo-400">{cc.cardName} ({cc.bankName})</span>

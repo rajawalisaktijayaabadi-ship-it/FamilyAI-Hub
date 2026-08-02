@@ -5,10 +5,11 @@ import {
 } from 'lucide-react';
 import { CalendarEvent, EventCategory, EventPriority, ReminderOption, RepeatRule, CalendarScope } from '../types/calendarTypes';
 import { useCalendarStore } from '../stores/useCalendarStore';
-import { initialFamilyMembers } from '../../../data/mockData';
+import { useFamilyStore } from '../../../store/useFamilyStore';
 
 export const EventFormModal: React.FC = () => {
   const { isEventModalOpen, editingEvent, selectedDate, closeEventModal, addEvent, updateEvent, deleteEvent, categories } = useCalendarStore();
+  const { familyMembers } = useFamilyStore();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -328,7 +329,7 @@ export const EventFormModal: React.FC = () => {
               <User className="w-3.5 h-3.5 text-blue-400" /> Tugaskan Anggota Keluarga
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {initialFamilyMembers.map((member) => {
+              {familyMembers.map((member) => {
                 const isSelected = assignedMemberIds.includes(member.id);
                 return (
                   <button
