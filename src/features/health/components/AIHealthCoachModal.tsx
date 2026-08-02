@@ -3,6 +3,7 @@ import {
   Sparkles, Stethoscope, AlertTriangle, ShieldAlert, 
   CheckCircle2, X, Send, HeartPulse 
 } from 'lucide-react';
+import { GeminiService } from '../../../providers/gemini/GeminiService';
 
 interface AIHealthCoachModalProps {
   isOpen: boolean;
@@ -40,12 +41,7 @@ export const AIHealthCoachModal: React.FC<AIHealthCoachModalProps> = ({
 
     setLoading(true);
     try {
-      const res = await fetch('/api/ai/health-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symptoms, ageGroup })
-      });
-      const data = await res.json();
+      const data = await GeminiService.checkHealth(symptoms, ageGroup);
       if (data && data.possibleCauses) {
         setAnalysisResult(data);
       }

@@ -11,6 +11,7 @@ import {
   Filter,
   Send
 } from 'lucide-react';
+import { GeminiService } from '../../../providers/gemini/GeminiService';
 import { Child, ParentingTip } from '../types';
 
 interface AICoachTipsTabProps {
@@ -60,16 +61,7 @@ export const AICoachTipsTab: React.FC<AICoachTipsTabProps> = ({ child, tips }) =
 
     setLoading(true);
     try {
-      const res = await fetch('/api/ai/parenting', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          childAge: child.age,
-          childName: child.name,
-          behaviorQuery: query
-        })
-      });
-      const data = await res.json();
+      const data = await GeminiService.getParentingAdvice(child.age, query);
       if (data && data.doList) {
         setCoachResponse(data);
       } else {

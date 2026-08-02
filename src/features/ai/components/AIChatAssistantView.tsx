@@ -13,6 +13,7 @@ import {
   BookOpen, 
   Cpu 
 } from 'lucide-react';
+import { GeminiService } from '../../../providers/gemini/GeminiService';
 import { AIChatMessage } from '../../../types/aiSuperAssistant';
 
 interface AIChatAssistantViewProps {
@@ -59,34 +60,25 @@ export const AIChatAssistantView: React.FC<AIChatAssistantViewProps> = ({ curren
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: msgText,
-          category: selectedPromptCategory,
-          memberName: currentMember?.name || 'Keluarga'
-        })
-      });
+      const data = await GeminiService.sendChat(
+        msgText,
+        selectedPromptCategory,
+        currentMember?.name || 'Keluarga'
+      );
 
-      if (res.ok) {
-        const data = await res.json();
-        const aiReply: AIChatMessage = {
-          id: `ai-${Date.now()}`,
-          sender: 'ai',
-          text: data.reply || 'Terima kasih atas pertanyaannya. AI sedang memproses integrasi data keluarga.',
-          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
-          category: selectedPromptCategory
-        };
-        setMessages((prev) => [...prev, aiReply]);
-      } else {
-        throw new Error('API Error');
-      }
+      const aiReply: AIChatMessage = {
+        id: `ai-${Date.now()}`,
+        sender: 'ai',
+        text: data.reply || 'Terima kasih atas pertanyaannya. FamilyAI sedang memproses integrasi data keluarga.',
+        timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
+        category: selectedPromptCategory
+      };
+      setMessages((prev) => [...prev, aiReply]);
     } catch (e) {
       const fallbackMsg: AIChatMessage = {
         id: `ai-${Date.now()}`,
         sender: 'ai',
-        text: `Saya mengerti pertanyaan Anda: "${msgText}". Berdasarkan data konteks keluarga Sastro, rekomendasi terbaik adalah mengoordinasikan jadwal kalender harian, memastikan nutrisi gizi seimbang, serta memantau pengeluaran anggaran keluarga secara terukur.`,
+        text: `Saya mengerti pertanyaan Anda: "${msgText}". Berdasarkan data konteks keluarga, rekomendasi terbaik adalah mengoordinasikan jadwal kalender harian, memastikan nutrisi gizi seimbang, serta memantau pengeluaran anggaran keluarga secara terukur.`,
         timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
       };
       setMessages((prev) => [...prev, fallbackMsg]);
