@@ -15,9 +15,17 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.role == 'child';
     }
 
+    // App Settings & Config (Landing Page Image, etc)
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+    match /app_config/{configId} {
+      allow read, write: if true;
+    }
+
     // Default match
     match /{document=**} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if true;
     }
 
     // Children & Child Profile

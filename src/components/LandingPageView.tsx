@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { 
   Sparkles, 
   ShieldCheck, 
@@ -33,7 +35,9 @@ import {
   Upload,
   Save,
   RotateCcw,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Camera,
+  X
 } from 'lucide-react';
 
 interface LandingPageViewProps {
@@ -55,43 +59,142 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   const [simRunning, setSimRunning] = useState<boolean>(false);
   const [simResultReady, setSimResultReady] = useState<boolean>(true);
 
-  // Custom Uploaded Landing Family Photo State & Persistence
+  // Custom Uploaded Landing Family Photo State & Persistence with Firestore Cloud Sync
   const [landingPhoto, setLandingPhoto] = useState<string>(() => {
     return localStorage.getItem('familyai_landing_photo') || DEFAULT_LANDING_PHOTO;
   });
   const [tempPhoto, setTempPhoto] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string>('');
+  const [isSavingCloud, setIsSavingCloud] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Firestore real-time listener for landing photo synchronization across deployments & devices
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+    try {
+      unsub = onSnapshot(doc(db, 'settings', 'landing_config'), (docSnap) => {
+        if (docSnap.exists() && docSnap.data()?.photoUrl) {
+          const cloudPhoto = docSnap.data().photoUrl;
+          setLandingPhoto(cloudPhoto);
+          localStorage.setItem('familyai_landing_photo', cloudPhoto);
+        }
+      }, (err) => {
+        console.warn("Firestore photo sync warning (offline fallback enabled):", err);
+      });
+    } catch (err) {
+      console.warn("Firestore listener setup error:", err);
+    }
+    return () => {
+      if (unsub) unsub();
+    };
+  }, []);
+
+  // Compress image to ensure <500KB size for reliable Firestore cloud storage
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1400;
+          const MAX_HEIGHT = 900;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          } else {
+            resolve(e.target?.result as string);
+          }
+        };
+        img.onerror = () => reject(new Error('Gagal memuat gambar'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setTempPhoto(event.target.result as string);
-          setSaveStatus('Gambar dipilih. Klik "Simpan Foto" untuk menyimpan.');
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        setSaveStatus('Mengompresi gambar untuk penyimpanan optimal...');
+        const compressedBase64 = await compressImage(file);
+        setTempPhoto(compressedBase64);
+        setSaveStatus('Gambar baru siap disimpan! Klik "Simpan Foto ke Cloud Database" agar tersimpan permanen.');
+      } catch (err) {
+        console.error("Gagal mengompresi gambar:", err);
+        // Fallback to direct FileReader
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            setTempPhoto(event.target.result as string);
+            setSaveStatus('Gambar baru dipilih. Klik "Simpan Foto ke Cloud Database".');
+          }
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
-  const handleSavePhoto = () => {
+  const handleSavePhoto = async () => {
     const photoToSave = tempPhoto || landingPhoto;
     localStorage.setItem('familyai_landing_photo', photoToSave);
     setLandingPhoto(photoToSave);
     setTempPhoto(null);
-    setSaveStatus('Foto landing page berhasil disimpan!');
-    setTimeout(() => setSaveStatus(''), 3500);
+    setIsSavingCloud(true);
+    setSaveStatus('Menyimpan foto ke Cloud Database (Firestore)...');
+
+    try {
+      await setDoc(doc(db, 'settings', 'landing_config'), {
+        photoUrl: photoToSave,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      setSaveStatus('Foto landing page berhasil disimpan secara permanen di Firestore Cloud (Tersimpan setelah redeploy!)');
+    } catch (err) {
+      console.error("Firestore save error:", err);
+      setSaveStatus('Foto tersimpan secara lokal di browser.');
+    } finally {
+      setIsSavingCloud(false);
+      setTimeout(() => setSaveStatus(''), 4500);
+    }
   };
 
-  const handleResetPhoto = () => {
+  const handleResetPhoto = async () => {
     localStorage.removeItem('familyai_landing_photo');
     setLandingPhoto(DEFAULT_LANDING_PHOTO);
     setTempPhoto(null);
-    setSaveStatus('Foto dikembalikan ke foto awal.');
-    setTimeout(() => setSaveStatus(''), 3500);
+    setSaveStatus('Mereset foto...');
+
+    try {
+      await setDoc(doc(db, 'settings', 'landing_config'), {
+        photoUrl: DEFAULT_LANDING_PHOTO,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      setSaveStatus('Foto dikembalikan ke foto default awal.');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTimeout(() => setSaveStatus(''), 3500);
+    }
   };
 
   // Live Visitor Ticker Simulation
@@ -227,9 +330,58 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-amber-500/10 blur-[140px] rounded-full pointer-events-none" />
         <div className="absolute top-1/3 right-10 w-[400px] h-[400px] bg-indigo-600/15 blur-[120px] rounded-full pointer-events-none" />
 
-        {/* LUXURY FAMILY PHOTO BANNER SHOWCASE (POSISI PALING ATAS) */}
-        <div className="mb-10 relative max-w-5xl mx-auto z-10">
+        {/* LUXURY FAMILY PHOTO BANNER SHOWCASE (POSISI PALING ATAS WITH FIRESTORE CLOUD PERSISTENCE) */}
+        <div className="mb-10 relative max-w-5xl mx-auto z-10 space-y-2">
           
+          {/* Hidden File Input */}
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            accept="image/*" 
+            className="hidden" 
+          />
+
+          {/* Pending Upload Action Bar (Only when user selects a new photo) */}
+          {tempPhoto && (
+            <div className="p-3 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl backdrop-blur-xl flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-400 animate-bounce shrink-0" />
+                <div>
+                  <span className="font-extrabold text-white text-xs block">Foto Baru Siap Disimpan!</span>
+                  <span className="text-[10px] text-slate-300">Simpan ke Cloud Database agar foto tidak berubah kembali ke default setelah redeploy.</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSavePhoto}
+                  disabled={isSavingCloud}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/30 flex items-center gap-1.5 transition-all"
+                >
+                  <Save className="w-4 h-4 text-slate-950" />
+                  <span>{isSavingCloud ? 'Menyimpan...' : 'Simpan Foto ke Cloud (Permanen)'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTempPhoto(null)}
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Batal</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Status Message */}
+          {saveStatus && !tempPhoto && (
+            <div className="px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs font-semibold flex items-center gap-2 animate-fadeIn">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+              <span>{saveStatus}</span>
+            </div>
+          )}
+
           {/* Photo Showcase Display Card */}
           <div className="relative rounded-3xl p-1 bg-gradient-to-tr from-amber-500/40 via-indigo-600/40 to-purple-600/40 shadow-2xl shadow-amber-500/20 group overflow-hidden">
             <div className="relative rounded-[22px] overflow-hidden bg-slate-950 aspect-[16/9] sm:aspect-[21/9]">
@@ -245,6 +397,19 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-amber-400/40 text-amber-300 text-xs font-bold shadow-lg">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
                 <span>Keluarga Harmonis & Sehat #FamilyAIHub</span>
+              </div>
+
+              {/* Top Right Discreet Photo Change Trigger */}
+              <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Upload Foto Baru Dari Perangkat"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/80 hover:bg-slate-900 border border-amber-500/40 text-amber-300 hover:text-amber-200 text-xs font-bold backdrop-blur-md shadow-xl transition-all hover:scale-105"
+                >
+                  <Camera className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline text-[11px]">Ganti Foto Banner</span>
+                </button>
               </div>
 
               {/* Floating Glassmorphism Overlay Cards */}
