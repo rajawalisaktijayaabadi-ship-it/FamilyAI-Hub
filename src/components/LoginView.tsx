@@ -14,12 +14,26 @@ import {
   AlertCircle,
   AtSign,
   Info,
-  Check
+  Check,
+  UserPlus,
+  PlusCircle,
+  User,
+  Phone
 } from 'lucide-react';
-import { FamilyMember } from '../types';
+import { FamilyMember, FamilyRole, DetailedFamilyRole } from '../types';
 import { initialFamilyMembers } from '../data/mockData';
 import { auth } from '../lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useFamilyStore } from '../store/useFamilyStore';
+
+const AVATAR_PRESETS = [
+  { label: 'Wanita / Ibu', url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200' },
+  { label: 'Pria / Ayah', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200' },
+  { label: 'Anak Perempuan', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200' },
+  { label: 'Anak Laki-Laki', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200' },
+  { label: 'Senior / Nenek', url: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&q=80&w=200' },
+  { label: 'Kakek', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200' }
+];
 
 interface LoginViewProps {
   familyMembers: FamilyMember[];
@@ -34,7 +48,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
   onLoginSuccess,
   onBackToLanding
 }) => {
-  const [loginMethod, setLoginMethod] = useState<'gmail' | 'credentials' | 'profile'>('gmail');
+  const { addMember } = useFamilyStore();
+  const [loginMethod, setLoginMethod] = useState<'gmail' | 'credentials' | 'profile' | 'register'>('gmail');
   
   // Selected Member for Gmail / Profile
   const [selectedMemberId, setSelectedMemberId] = useState<string>(familyMembers[0]?.id || 'm1');
@@ -43,6 +58,17 @@ export const LoginView: React.FC<LoginViewProps> = ({
   // Username & Password credentials form
   const [inputUsernameOrEmail, setInputUsernameOrEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
+
+  // Register New Member Form state
+  const [regName, setRegName] = useState('');
+  const [regRelationship, setRegRelationship] = useState<DetailedFamilyRole>('Ibu');
+  const [regRole, setRegRole] = useState<FamilyRole>('parents');
+  const [regGmail, setRegGmail] = useState('');
+  const [regUsername, setRegUsername] = useState('');
+  const [regPassword, setRegPassword] = useState('password123');
+  const [regPhone, setRegPhone] = useState('081234567890');
+  const [regAge, setRegAge] = useState<number>(30);
+  const [regAvatar, setRegAvatar] = useState(AVATAR_PRESETS[0].url);
   
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -163,6 +189,85 @@ export const LoginView: React.FC<LoginViewProps> = ({
     setTimeout(() => onLoginSuccess(), 500);
   };
 
+  // 4. Handle Register New Family Member Account
+  const handleRegisterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    if (!regName.trim() || !regGmail.trim()) {
+      setErrorMessage('Harap isi Nama Lengkap dan Akun Gmail.');
+      return;
+    }
+
+    const targetGmail = regGmail.trim().toLowerCase();
+    const existingGmail = familyMembers.find(
+      m => (m.gmailAccount && m.gmailAccount.toLowerCase() === targetGmail) ||
+           (m.email && m.email.toLowerCase() === targetGmail)
+    );
+
+    if (existingGmail) {
+      setErrorMessage(`Akun Gmail "${targetGmail}" sudah terdaftar atas nama ${existingGmail.name}. Silakan gunakan menu Login.`);
+      return;
+    }
+
+    const generatedUsername = regUsername.trim().toLowerCase() || regName.trim().toLowerCase().replace(/\s+/g, '.');
+
+    const newMemberData: Omit<FamilyMember, 'id'> = {
+      name: regName.trim(),
+      relationship: regRelationship,
+      role: regRole,
+      roleTitle: regRelationship === 'Ayah' || regRelationship === 'Ibu' ? 'Kepala Rumah Tangga' : regRelationship,
+      detailedRole: regRelationship as DetailedFamilyRole,
+      age: Number(regAge) || 28,
+      email: targetGmail,
+      gmailAccount: targetGmail,
+      username: generatedUsername,
+      password: regPassword.trim() || 'password123',
+      phone: regPhone.trim() || '081234567890',
+      avatar: regAvatar || AVATAR_PRESETS[0].url,
+      mood: 'happy',
+      statusText: 'Baru mendaftar di FamilyAI Hub',
+      status: 'aktif',
+      isOnline: true,
+      location: {
+        lat: regRelationship === 'Ibu' ? -6.2250 : -6.2088,
+        lng: regRelationship === 'Ibu' ? 106.8000 : 106.8456,
+        placeName: regRelationship === 'Ibu' ? 'Kebayoran Baru, Jakarta Selatan' : 'Jakarta Pusat',
+        lastUpdated: 'Baru saja',
+        batteryPercent: 100
+      },
+      locationHistory: [
+        {
+          id: `loc_${Date.now()}`,
+          placeName: 'Lokasi Pendaftaran Akun Baru',
+          timestamp: 'Baru saja',
+          addressDetails: 'Titik koordinat awal registrasi keluarga',
+          category: 'Rumah'
+        }
+      ]
+    };
+
+    setIsLoading(true);
+    addMember(newMemberData);
+
+    setTimeout(() => {
+      setIsLoading(false);
+      const updatedStoreMembers = useFamilyStore.getState().familyMembers;
+      const newlyCreated = updatedStoreMembers.find(
+        m => (m.gmailAccount && m.gmailAccount.toLowerCase() === targetGmail) || m.name === regName.trim()
+      );
+      
+      if (newlyCreated) {
+        onSelectMember(newlyCreated);
+      }
+      setSuccessMessage(`Akun keluarga baru "${regName}" berhasil dibuat! Mengalihkan ke aplikasi...`);
+      setTimeout(() => {
+        onLoginSuccess();
+      }, 700);
+    }, 400);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-between p-4 sm:p-6 lg:p-8 font-sans selection:bg-indigo-500 selection:text-white">
       
@@ -203,46 +308,65 @@ export const LoginView: React.FC<LoginViewProps> = ({
           </div>
 
           {/* Banner Informasi Kepala Rumah Tangga */}
-          <div className="p-3.5 bg-indigo-950/40 border border-indigo-800/50 rounded-2xl flex items-start gap-3 text-xs text-indigo-200">
-            <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold text-white block">Sistem Kredensial Keluarga Ditentukan Kepala Rumah Tangga:</span>
-              <p className="text-slate-300 mt-0.5 text-[11px] leading-relaxed">
-                Kepala Rumah Tangga menginput username, password, dan akun Gmail untuk seluruh anggota keluarga di menu Manajemen Anggota Keluarga.
-              </p>
+          <div className="p-3.5 bg-indigo-950/40 border border-indigo-800/50 rounded-2xl flex items-start justify-between gap-3 text-xs text-indigo-200 flex-wrap">
+            <div className="flex items-start gap-3">
+              <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-white block">Sistem Kredensial & Pendaftaran Akun Keluarga:</span>
+                <p className="text-slate-300 mt-0.5 text-[11px] leading-relaxed">
+                  Login menggunakan kredensial terdaftar atau buat akun keluarga baru secara gratis.
+                </p>
+              </div>
             </div>
+            <button
+              onClick={() => { setLoginMethod('register'); setErrorMessage(''); setSuccessMessage(''); }}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 shrink-0"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Buat Akun Baru</span>
+            </button>
           </div>
 
           {/* Login Method Switcher Tabs */}
-          <div className="grid grid-cols-3 p-1 bg-slate-950 rounded-2xl border border-slate-800 text-xs font-semibold">
+          <div className="grid grid-cols-2 sm:grid-cols-4 p-1 bg-slate-950 rounded-2xl border border-slate-800 text-xs font-semibold gap-1">
             <button
               onClick={() => { setLoginMethod('gmail'); setErrorMessage(''); setSuccessMessage(''); }}
-              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-2.5 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                 loginMethod === 'gmail' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Globe2 className="w-3.5 h-3.5 text-sky-300" />
-              <span>Login Akun Gmail</span>
+              <Globe2 className="w-3.5 h-3.5 text-sky-300 shrink-0" />
+              <span className="truncate">Login Gmail</span>
             </button>
 
             <button
               onClick={() => { setLoginMethod('credentials'); setErrorMessage(''); setSuccessMessage(''); }}
-              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-2.5 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                 loginMethod === 'credentials' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <KeyRound className="w-3.5 h-3.5 text-amber-300" />
-              <span>Username & Password</span>
+              <KeyRound className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+              <span className="truncate">Username & Pass</span>
             </button>
 
             <button
               onClick={() => { setLoginMethod('profile'); setErrorMessage(''); setSuccessMessage(''); }}
-              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-2.5 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                 loginMethod === 'profile' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Users className="w-3.5 h-3.5 text-emerald-300" />
-              <span>Pilih Profil Anggota</span>
+              <Users className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+              <span className="truncate">Pilih Profil</span>
+            </button>
+
+            <button
+              onClick={() => { setLoginMethod('register'); setErrorMessage(''); setSuccessMessage(''); }}
+              className={`py-2.5 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                loginMethod === 'register' ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-md font-bold' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5 text-rose-300 shrink-0" />
+              <span className="truncate">Daftar Akun Baru</span>
             </button>
           </div>
 
@@ -479,6 +603,178 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 </button>
               </div>
             </div>
+          )}
+
+          {/* METHOD 4: REGISTER NEW FAMILY MEMBER ACCOUNT */}
+          {loginMethod === 'register' && (
+            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              <div className="p-3 bg-rose-950/40 border border-rose-500/30 rounded-2xl flex items-center gap-2.5 text-xs text-rose-200">
+                <UserPlus className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>
+                  <strong>Formulir Akun Keluarga Baru:</strong> Daftarkan nama, Gmail, dan username agar dapat langsung terhubung dalam hub keamanan & obrolan keluarga.
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {/* Nama Lengkap */}
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Nama Lengkap *</label>
+                  <div className="relative">
+                    <User className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="contoh: Siti Rahmawati"
+                      value={regName}
+                      onChange={(e) => setRegName(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-rose-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Akun Gmail */}
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Akun Gmail (SSO) *</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="siti.rammawati@gmail.com"
+                      value={regGmail}
+                      onChange={(e) => setRegGmail(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-rose-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Hubungan Keluarga */}
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Hubungan dalam Keluarga</label>
+                  <select
+                    value={regRelationship}
+                    onChange={(e) => setRegRelationship(e.target.value as DetailedFamilyRole)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-rose-500"
+                  >
+                    <option value="Ibu">Ibu</option>
+                    <option value="Ayah">Ayah</option>
+                    <option value="Anak">Anak</option>
+                    <option value="Nenek">Nenek</option>
+                    <option value="Kakek">Kakek</option>
+                    <option value="Saudara">Saudara</option>
+                    <option value="Pengasuh">Pengasuh</option>
+                    <option value="Lainnya">Lainnya</option>
+                  </select>
+                </div>
+
+                {/* Tingkat Akses Role */}
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Tingkat Akses (Role)</label>
+                  <select
+                    value={regRole}
+                    onChange={(e) => setRegRole(e.target.value as FamilyRole)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-rose-500"
+                  >
+                    <option value="parents">Orang Tua / Pengelola</option>
+                    <option value="kids">Anak</option>
+                    <option value="seniors">Senior / Lansia</option>
+                    <option value="couple">Pasangan</option>
+                  </select>
+                </div>
+
+                {/* Username */}
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Username Akses</label>
+                  <div className="relative">
+                    <AtSign className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="misal: siti.rammawati"
+                      value={regUsername}
+                      onChange={(e) => setRegUsername(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-rose-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Kata Sandi (Password)</label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="password123"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-rose-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Nomor Telepon HP</label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                    <input
+                      type="tel"
+                      placeholder="081234567890"
+                      value={regPhone}
+                      onChange={(e) => setRegPhone(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-rose-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Usia */}
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">Usia (Tahun)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="110"
+                    value={regAge}
+                    onChange={(e) => setRegAge(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+              </div>
+
+              {/* Avatar Selector */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-2">Pilih Foto Profil Avatar:</label>
+                <div className="grid grid-cols-6 gap-2">
+                  {AVATAR_PRESETS.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setRegAvatar(preset.url)}
+                      className={`relative p-1 rounded-2xl border transition-all ${
+                        regAvatar === preset.url ? 'border-rose-500 bg-rose-950/50 ring-2 ring-rose-500/40' : 'border-slate-800 hover:border-slate-700 bg-slate-950'
+                      }`}
+                      title={preset.label}
+                    >
+                      <img src={preset.url} alt={preset.label} className="w-full h-10 rounded-xl object-cover" />
+                      {regAvatar === preset.url && (
+                        <div className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5">
+                          <Check className="w-3 h-3" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold text-xs shadow-xl shadow-rose-600/25 transition-all flex items-center justify-center gap-2 mt-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>{isLoading ? 'Membuat Akun...' : 'Daftarkan & Langsung Masuk ke Aplikasi'}</span>
+              </button>
+            </form>
           )}
 
           {/* Footer Security Notice */}

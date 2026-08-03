@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { AIHomeCard } from '../../features/ai/assistant/AIHomeCard';
 import { SmartCalendarDashboardCard } from '../../features/calendar/components/SmartCalendarDashboardCard';
+import { RealtimeWeatherWidget } from '../RealtimeWeatherWidget';
 import { FamilyMember, TaskItem, SmartDevice, MealPlanDay, ActiveTab } from '../../types';
 import { useFamilyStore } from '../../store/useFamilyStore';
 import { useAuth } from '../../contexts/AuthContext';
@@ -239,38 +240,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* 8. Weather Widget Placeholder */}
-        <div className="bg-gradient-to-br from-slate-900 to-indigo-950 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CloudSun className="w-5 h-5 text-amber-400" />
-              <h3 className="font-bold text-base text-white">Cuaca & Kualitas Udara</h3>
-            </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Live IoT</span>
-          </div>
-
-          <div className="space-y-2 my-2">
-            <div className="flex items-baseline justify-between">
-              <span className="text-4xl font-extrabold text-white">31°C</span>
-              <span className="text-sm font-semibold text-amber-300">Cerah Berawan</span>
-            </div>
-            <div className="text-xs text-slate-300 font-medium flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Jakarta Selatan, DKI Jakarta</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80 text-xs">
-            <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-              <div className="text-[10px] text-slate-400">Kelembapan</div>
-              <div className="font-bold text-slate-200">65% RH</div>
-            </div>
-            <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-              <div className="text-[10px] text-slate-400">Kualitas Udara</div>
-              <div className="font-bold text-emerald-400">38 AQI (Bagus)</div>
-            </div>
-          </div>
-        </div>
+        {/* 8. Real-time Weather Widget based on member GPS */}
+        <RealtimeWeatherWidget members={members} defaultMemberId={activeMember?.id} />
       </div>
 
       {/* Smart Calendar & AI Planner Dashboard Section */}

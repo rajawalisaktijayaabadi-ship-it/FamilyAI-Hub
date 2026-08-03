@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { 
   FamilyMember, 
   FamilyProfile, 
@@ -16,6 +16,30 @@ import {
   initialRolePermissions 
 } from '../data/mockData';
 
+const safeStorage = createJSONStorage(() => ({
+  getItem: (name: string) => {
+    try {
+      return localStorage.getItem(name);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (name: string, value: string) => {
+    try {
+      localStorage.setItem(name, value);
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded, skipping persist update:', e);
+    }
+  },
+  removeItem: (name: string) => {
+    try {
+      localStorage.removeItem(name);
+    } catch {
+      // ignore
+    }
+  }
+}));
+
 interface FamilyStore {
   familyMembers: FamilyMember[];
   familyProfile: FamilyProfile;
@@ -25,11 +49,14 @@ interface FamilyStore {
   selectedMemberForEdit: FamilyMember | null;
   isAddMemberOpen: boolean;
   isInviteModalOpen: boolean;
+  isAutoGpsSimulationActive: boolean;
 
   // Actions
   addMember: (memberData: Omit<FamilyMember, 'id'>) => void;
   updateMember: (id: string, updatedData: Partial<FamilyMember>) => void;
-  updateMemberLocation: (memberId: string, placeName: string, addressDetails?: string, category?: any) => void;
+  updateMemberLocation: (memberId: string, placeName: string, addressDetails?: string, category?: any, lat?: number, lng?: number) => void;
+  simulateRealtimeGpsUpdates: () => void;
+  toggleAutoGpsSimulation: (active?: boolean) => void;
   deleteMember: (id: string) => void;
   updateFamilyProfile: (profileData: Partial<FamilyProfile>) => void;
   addInvitation: (email: string, role: DetailedFamilyRole) => void;
@@ -51,6 +78,47 @@ export const useFamilyStore = create<FamilyStore>()(
       selectedMemberForEdit: null,
       isAddMemberOpen: false,
       isInviteModalOpen: false,
+      isAutoGpsSimulationActive: true,
+
+      toggleAutoGpsSimulation: (active) => set((state) => ({ 
+        isAutoGpsSimulationActive: active !== undefined ? active : !state.isAutoGpsSimulationActive 
+      })),
+
+      simulateRealtimeGpsUpdates: () => {
+        const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        
+        set((state) => ({
+          familyMembers: state.familyMembers.map((m) => {
+            const defaultLat = m.id === 'm2' ? -6.2250 : -6.2088;
+            const defaultLng = m.id === 'm2' ? 106.8000 : 106.8456;
+            const currentLat = m.location?.lat || defaultLat;
+            const currentLng = m.location?.lng || defaultLng;
+
+            // Realistic micro movement offset for dynamic simulation
+            const latOffset = (Math.random() - 0.5) * 0.0008;
+            const lngOffset = (Math.random() - 0.5) * 0.0008;
+            const newLat = Number((currentLat + latOffset).toFixed(5));
+            const newLng = Number((currentLng + lngOffset).toFixed(5));
+
+            // Slight battery percentage fluctuation
+            const currentBattery = m.location?.batteryPercent || 85;
+            const batteryChange = Math.random() > 0.85 ? (Math.random() > 0.5 ? 1 : -1) : 0;
+            const newBattery = Math.min(100, Math.max(15, currentBattery + batteryChange));
+
+            return {
+              ...m,
+              isOnline: true,
+              location: {
+                ...m.location,
+                lat: newLat,
+                lng: newLng,
+                batteryPercent: newBattery,
+                lastUpdated: `Real-time GPS (${timeStr} WIB)`
+              }
+            };
+          })
+        }));
+      },
 
       addMember: (memberData) => {
         const newId = `m_${Date.now()}`;
@@ -91,7 +159,7 @@ export const useFamilyStore = create<FamilyStore>()(
         }
       },
 
-      updateMemberLocation: (memberId, placeName, addressDetails = 'Lokasi Terkini', category = 'Lainnya') => {
+      updateMemberLocation: (memberId, placeName, addressDetails = 'Lokasi Terkini', category = 'Lainnya', lat?: number, lng?: number) => {
         const timeStr = `Hari ini, ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`;
         const member = get().familyMembers.find((m) => m.id === memberId);
         
@@ -112,7 +180,8 @@ export const useFamilyStore = create<FamilyStore>()(
               location: {
                 ...m.location,
                 placeName,
-                lastUpdated: 'Baru saja'
+                lastUpdated: 'Baru saja',
+                ...(lat !== undefined && lng !== undefined ? { lat, lng } : {})
               },
               locationHistory: updatedHistory
             };
@@ -193,7 +262,7 @@ export const useFamilyStore = create<FamilyStore>()(
         };
 
         set((state) => ({
-          familyActivities: [newActivity, ...state.familyActivities]
+          familyActivities: [newActivity, ...state.familyActivities].slice(0, 40)
         }));
       },
 
@@ -203,6 +272,7 @@ export const useFamilyStore = create<FamilyStore>()(
     }),
     {
       name: 'family-ai-hub-family-store',
+      storage: safeStorage,
       partialize: (state) => ({
         familyMembers: state.familyMembers,
         familyProfile: state.familyProfile,
@@ -213,3 +283,17 @@ export const useFamilyStore = create<FamilyStore>()(
     }
   )
 );
+
+// Automated background interval runner for real-time GPS updates across the entire app
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    try {
+      const store = useFamilyStore.getState();
+      if (store.isAutoGpsSimulationActive) {
+        store.simulateRealtimeGpsUpdates();
+      }
+    } catch {
+      // ignore
+    }
+  }, 10000); // Auto updates coordinates every 10 seconds
+}

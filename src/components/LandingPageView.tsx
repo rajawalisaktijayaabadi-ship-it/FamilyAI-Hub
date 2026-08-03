@@ -61,7 +61,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
   // Custom Uploaded Landing Family Photo State & Persistence with Firestore Cloud Sync
   const [landingPhoto, setLandingPhoto] = useState<string>(() => {
-    return localStorage.getItem('familyai_landing_photo') || DEFAULT_LANDING_PHOTO;
+    try {
+      return localStorage.getItem('familyai_landing_photo') || DEFAULT_LANDING_PHOTO;
+    } catch {
+      return DEFAULT_LANDING_PHOTO;
+    }
   });
   const [tempPhoto, setTempPhoto] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string>('');
@@ -76,7 +80,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         if (docSnap.exists() && docSnap.data()?.photoUrl) {
           const cloudPhoto = docSnap.data().photoUrl;
           setLandingPhoto(cloudPhoto);
-          localStorage.setItem('familyai_landing_photo', cloudPhoto);
+          try {
+            localStorage.setItem('familyai_landing_photo', cloudPhoto);
+          } catch {
+            // quota safeguard
+          }
         }
       }, (err) => {
         console.warn("Firestore photo sync warning (offline fallback enabled):", err);
@@ -157,7 +165,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
   const handleSavePhoto = async () => {
     const photoToSave = tempPhoto || landingPhoto;
-    localStorage.setItem('familyai_landing_photo', photoToSave);
+    try {
+      localStorage.setItem('familyai_landing_photo', photoToSave);
+    } catch {
+      // quota safeguard
+    }
     setLandingPhoto(photoToSave);
     setTempPhoto(null);
     setIsSavingCloud(true);
@@ -171,7 +183,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
       setSaveStatus('Foto landing page berhasil disimpan secara permanen di Firestore Cloud (Tersimpan setelah redeploy!)');
     } catch (err) {
       console.error("Firestore save error:", err);
-      setSaveStatus('Foto tersimpan secara lokal di browser.');
+      setSaveStatus('Foto tersimpan di aplikasi.');
     } finally {
       setIsSavingCloud(false);
       setTimeout(() => setSaveStatus(''), 4500);
@@ -179,7 +191,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   };
 
   const handleResetPhoto = async () => {
-    localStorage.removeItem('familyai_landing_photo');
+    try {
+      localStorage.removeItem('familyai_landing_photo');
+    } catch {
+      // ignore
+    }
     setLandingPhoto(DEFAULT_LANDING_PHOTO);
     setTempPhoto(null);
     setSaveStatus('Mereset foto...');

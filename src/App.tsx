@@ -346,7 +346,8 @@ export default function App() {
 
             {activeTab === 'safety' && (
               <SafetyView
-                familyMembers={familyMembers}
+                familyMembers={effectiveMembers}
+                currentMember={currentMember}
                 onOpenSOS={() => setShowSOSModal(true)}
               />
             )}

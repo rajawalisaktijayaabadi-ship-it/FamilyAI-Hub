@@ -9,15 +9,29 @@ interface DummyDataStore {
 const STORAGE_KEY = 'familyai_hide_dummy_data';
 
 export const useDummyDataStore = create<DummyDataStore>((set) => ({
-  hideDummyData: localStorage.getItem(STORAGE_KEY) === 'true',
+  hideDummyData: (() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  })(),
   setHideDummyData: (hide: boolean) => {
-    localStorage.setItem(STORAGE_KEY, String(hide));
+    try {
+      localStorage.setItem(STORAGE_KEY, String(hide));
+    } catch {
+      // quota safeguard
+    }
     set({ hideDummyData: hide });
   },
   toggleHideDummyData: () => {
     set((state) => {
       const next = !state.hideDummyData;
-      localStorage.setItem(STORAGE_KEY, String(next));
+      try {
+        localStorage.setItem(STORAGE_KEY, String(next));
+      } catch {
+        // quota safeguard
+      }
       return { hideDummyData: next };
     });
   },

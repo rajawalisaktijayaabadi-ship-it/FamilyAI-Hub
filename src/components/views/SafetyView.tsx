@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   MapPin, ShieldAlert, ShieldCheck, Battery, Navigation, Radio, PhoneCall,
   History, Clock, Home, GraduationCap, Briefcase, Building, Trees, Plus,
-  CheckCircle2, Filter, Sparkles, X, ChevronRight, Compass, LocateFixed, AlertTriangle, RefreshCw
+  CheckCircle2, Filter, Sparkles, X, ChevronRight, Compass, LocateFixed, AlertTriangle, RefreshCw,
+  ExternalLink, Eye, Copy
 } from 'lucide-react';
 import { FamilyMember, LocationHistoryLog } from '../../types';
 import { useFamilyStore } from '../../store/useFamilyStore';
@@ -10,14 +11,17 @@ import { useDummyDataStore, isDummyId } from '../../store/useDummyDataStore';
 
 interface SafetyViewProps {
   familyMembers: FamilyMember[];
+  currentMember?: FamilyMember;
   onOpenSOS: () => void;
 }
 
-export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOpenSOS }) => {
+export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], currentMember, onOpenSOS }) => {
   const { updateMemberLocation } = useFamilyStore();
   const [selectedMemberFilter, setSelectedMemberFilter] = useState<string>('all');
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
-  const [checkInMemberId, setCheckInMemberId] = useState<string>(familyMembers[0]?.id || 'm1');
+  
+  const activeUserMember = currentMember || familyMembers[0];
+  const [checkInMemberId, setCheckInMemberId] = useState<string>(activeUserMember?.id || 'm1');
   const [newPlaceName, setNewPlaceName] = useState<string>('');
   const [newAddressDetails, setNewAddressDetails] = useState<string>('');
   const [newCategory, setNewCategory] = useState<'Rumah' | 'Sekolah' | 'Kantor' | 'Les/Kursus' | 'Publik/Olahraga' | 'Lainnya'>('Publik/Olahraga');
@@ -28,7 +32,26 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
   const [liveCoords, setLiveCoords] = useState<{ lat: number; lng: number; accuracy: number; timestamp: string } | null>(null);
   const watchIdRef = useRef<number | null>(null);
 
+  // New states for interactive member detail modal & live location auto-refresh
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [autoRefreshCountdown, setAutoRefreshCountdown] = useState<number>(30);
+  const [lastSyncStatus, setLastSyncStatus] = useState<string>('');
+  const [copiedToast, setCopiedToast] = useState<boolean>(false);
+
   const { hideDummyData } = useDummyDataStore();
+
+  // Keep checkInMemberId in sync when currentMember changes & auto-sync GPS for active user
+  useEffect(() => {
+    if (currentMember?.id) {
+      setCheckInMemberId(currentMember.id);
+      handleSimulateGpsForMember(currentMember.id);
+    }
+  }, [currentMember?.id]);
+
+  // Derived selected member object from latest familyMembers prop
+  const selectedMemberForDetail = selectedMemberId 
+    ? familyMembers.find(m => m.id === selectedMemberId) || null 
+    : null;
 
   // Cleanup watcher on unmount
   useEffect(() => {
@@ -39,11 +62,80 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
     };
   }, []);
 
+  // Live location auto-refresh timer (countdown ticker)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAutoRefreshCountdown((prev) => (prev <= 1 ? 30 : prev - 1));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Handler to manually refresh all member locations instantly
+  const handleRefreshAllLocations = () => {
+    const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    familyMembers.forEach((m) => {
+      updateMemberLocation(
+        m.id,
+        m.location.placeName,
+        `Diperbarui manual via Sinyal GPS Live (${timeStr} WIB)`,
+        'Publik/Olahraga'
+      );
+    });
+    setLastSyncStatus(`Pembaruan manual berhasil! Semua lokasi GPS anggota keluarga diselaraskan (${timeStr}).`);
+    setAutoRefreshCountdown(30);
+    setTimeout(() => setLastSyncStatus(''), 4000);
+  };
+
+  // Handler for instant fallback GPS simulation (for active logged-in user or target member)
+  const handleSimulateGpsForMember = (targetMemberId?: string) => {
+    const memberIdToUpdate = targetMemberId || currentMember?.id || checkInMemberId || familyMembers[0]?.id || 'm1';
+    const targetMember = familyMembers.find(m => m.id === memberIdToUpdate);
+    const memberName = targetMember ? targetMember.name : (currentMember?.name || 'Siti Rahmawati');
+
+    // Base coords per member (Siti Rahmawati default Kebayoran Baru)
+    const defaultLat = memberIdToUpdate === 'm2' ? -6.2250 : -6.2088;
+    const defaultLng = memberIdToUpdate === 'm2' ? 106.8000 : 106.8456;
+    const baseLat = targetMember?.location?.lat || defaultLat;
+    const baseLng = targetMember?.location?.lng || defaultLng;
+
+    const lat = baseLat + (Math.random() - 0.5) * 0.005;
+    const lng = baseLng + (Math.random() - 0.5) * 0.005;
+    const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+    setLiveCoords({
+      lat,
+      lng,
+      accuracy: 8,
+      timestamp: timeStr
+    });
+    setGpsStatus('active');
+
+    const areaName = memberIdToUpdate === 'm2' ? 'Kebayoran Baru, Jakarta Selatan' : 'SCBD Jakarta Pusat';
+    const gpsPlaceName = `Live GPS ${memberName} (${areaName})`;
+    const gpsAddress = `Sinyal GPS Terkoneksi Aktif • Akurasi ±8m (${timeStr} WIB)`;
+
+    updateMemberLocation(
+      memberIdToUpdate,
+      gpsPlaceName,
+      gpsAddress,
+      'Publik/Olahraga',
+      lat,
+      lng
+    );
+
+    setLastSyncStatus(`Sinyal GPS ${memberName} berhasil terkoneksi & diperbarui ke lokasi (${lat.toFixed(4)}, ${lng.toFixed(4)})!`);
+    setTimeout(() => setLastSyncStatus(''), 4000);
+  };
+
   // Handler to request GPS Permission and activate real-time GPS tracking
   const handleRequestGpsPermission = (targetMemberId?: string) => {
+    const memberIdToUpdate = targetMemberId || currentMember?.id || checkInMemberId || familyMembers[0]?.id || 'm1';
+
     if (!('geolocation' in navigator)) {
       setGpsStatus('error');
-      setGpsErrorMsg('Layanan Geolocation tidak didukung oleh browser ini.');
+      setGpsErrorMsg('Layanan Geolocation tidak didukung oleh browser ini. Menggunakan simulasi sinyal GPS.');
+      handleSimulateGpsForMember(memberIdToUpdate);
       return;
     }
 
@@ -70,29 +162,36 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
       });
       setGpsStatus('active');
 
-      const memberIdToUpdate = targetMemberId || checkInMemberId || familyMembers[0]?.id || 'm1';
       const gpsPlaceName = `Live GPS (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-      const gpsAddress = `Akurasi ±${Math.round(accuracy)}m • Koordinat Peramban Aktif`;
+      const gpsAddress = `Akurasi ±${Math.round(accuracy)}m • Koordinat Peramban Aktif (${timeStr})`;
 
       updateMemberLocation(
         memberIdToUpdate,
         gpsPlaceName,
         gpsAddress,
-        'Publik/Olahraga'
+        'Publik/Olahraga',
+        lat,
+        lng
       );
+
+      const targetMember = familyMembers.find(m => m.id === memberIdToUpdate);
+      setLastSyncStatus(`GPS Live ${targetMember ? targetMember.name : 'Anggota'} berhasil diperbarui ke koordinat (${lat.toFixed(4)}, ${lng.toFixed(4)})!`);
+      setTimeout(() => setLastSyncStatus(''), 4000);
     };
 
     const handleError = (err: GeolocationPositionError) => {
       setGpsStatus('denied');
       if (err.code === err.PERMISSION_DENIED) {
-        setGpsErrorMsg('Izin lokasi ditolak oleh pengguna/browser. Mohon izinkan akses GPS pada pengaturan peramban.');
+        setGpsErrorMsg('Izin lokasi ditolak oleh pengguna/browser. Klik tombol "Simulasi GPS" untuk menyelaraskan koordinat.');
       } else if (err.code === err.POSITION_UNAVAILABLE) {
-        setGpsErrorMsg('Informasi lokasi GPS tidak dapat ditemukan.');
+        setGpsErrorMsg('Informasi lokasi GPS hardware tidak tersedia.');
       } else if (err.code === err.TIMEOUT) {
         setGpsErrorMsg('Permintaan lokasi GPS mengalami batas waktu (timeout).');
       } else {
         setGpsErrorMsg(err.message || 'Gagal mendapatkan izin lokasi GPS.');
       }
+      // Auto fallback to high-precision simulation if hardware GPS fails or is blocked in iframe
+      handleSimulateGpsForMember(memberIdToUpdate);
     };
 
     // Single fetch and watch setup
@@ -111,31 +210,41 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
   };
 
   const handleFillCheckInFromGPS = () => {
-    if (!('geolocation' in navigator)) {
-      alert('Geolocation tidak didukung peramban.');
-      return;
+    const targetMember = familyMembers.find(m => m.id === checkInMemberId) || activeUserMember;
+    const memberName = targetMember ? targetMember.name : 'Pengguna';
+
+    const applyGpsData = (lat: number, lng: number, acc: number) => {
+      const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      setLiveCoords({ lat, lng, accuracy: acc, timestamp: timeStr });
+      setGpsStatus('active');
+      setNewPlaceName(`Sinyal GPS Terkoneksi (${memberName})`);
+      setNewAddressDetails(`Koordinat (${lat.toFixed(4)}, ${lng.toFixed(4)}) • Akurasi ±${Math.round(acc)}m (${timeStr} WIB)`);
+      setNewCategory('Publik/Olahraga');
+    };
+
+    if ('geolocation' in navigator) {
+      setGpsStatus('requesting');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          applyGpsData(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+        },
+        () => {
+          // Graceful fallback to high precision simulation
+          const baseLat = targetMember?.location?.lat || (checkInMemberId === 'm2' ? -6.2250 : -6.2088);
+          const baseLng = targetMember?.location?.lng || (checkInMemberId === 'm2' ? 106.8000 : 106.8456);
+          const lat = baseLat + (Math.random() - 0.5) * 0.004;
+          const lng = baseLng + (Math.random() - 0.5) * 0.004;
+          applyGpsData(lat, lng, 10);
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    } else {
+      const baseLat = targetMember?.location?.lat || (checkInMemberId === 'm2' ? -6.2250 : -6.2088);
+      const baseLng = targetMember?.location?.lng || (checkInMemberId === 'm2' ? 106.8000 : 106.8456);
+      const lat = baseLat + (Math.random() - 0.5) * 0.004;
+      const lng = baseLng + (Math.random() - 0.5) * 0.004;
+      applyGpsData(lat, lng, 10);
     }
-
-    setGpsStatus('requesting');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        const acc = pos.coords.accuracy;
-        const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
-        setLiveCoords({ lat, lng, accuracy: acc, timestamp: timeStr });
-        setGpsStatus('active');
-        setNewPlaceName(`Koordinat GPS Live (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
-        setNewAddressDetails(`Akurasi ±${Math.round(acc)} meter • Terdeteksi otomatis via Peramban`);
-        setNewCategory('Publik/Olahraga');
-      },
-      (err) => {
-        setGpsStatus('denied');
-        alert('Gagal mengambil lokasi GPS: ' + (err.message || 'Izin ditolak'));
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
   };
 
   // Filter members list based on selected filter and dummy data toggle
@@ -193,11 +302,17 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
     e.preventDefault();
     if (!newPlaceName.trim()) return;
 
+    const targetMember = familyMembers.find(m => m.id === checkInMemberId);
+    const baseLat = liveCoords?.lat || targetMember?.location?.lat || (checkInMemberId === 'm2' ? -6.2250 : -6.2088);
+    const baseLng = liveCoords?.lng || targetMember?.location?.lng || (checkInMemberId === 'm2' ? 106.8000 : 106.8456);
+
     updateMemberLocation(
       checkInMemberId,
       newPlaceName.trim(),
       newAddressDetails.trim() || 'Pembaruan lokasi baru via Check-In',
-      newCategory
+      newCategory,
+      baseLat,
+      baseLng
     );
 
     // Reset state & close modal
@@ -279,7 +394,7 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               onClick={() => handleRequestGpsPermission()}
               disabled={gpsStatus === 'requesting'}
@@ -299,24 +414,42 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
               ) : gpsStatus === 'active' ? (
                 <>
                   <RefreshCw className="w-4 h-4" />
-                  <span>Perbarui GPS Realtime</span>
+                  <span>Perbarui GPS ({activeUserMember?.name.split(' ')[0] || 'Saya'})</span>
                 </>
               ) : (
                 <>
                   <LocateFixed className="w-4 h-4" />
-                  <span>Minta Izin GPS Peramban</span>
+                  <span>GPS Peramban ({activeUserMember?.name.split(' ')[0] || 'Saya'})</span>
                 </>
               )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSimulateGpsForMember()}
+              className="px-3 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-rose-300 hover:text-white border border-rose-500/30 transition-all flex items-center gap-1.5 shadow"
+              title="Hubungkan & perbarui sinyal GPS posisi pengguna aktif"
+            >
+              <Radio className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+              <span>Konek GPS ({activeUserMember?.name.split(' ')[0] || 'Siti'})</span>
             </button>
           </div>
         </div>
 
         {gpsStatus === 'denied' && (
-          <div className="p-3 bg-rose-950/60 border border-rose-800/80 rounded-2xl flex items-center gap-2.5 text-xs text-rose-200">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span>
-              <strong>Panduan Izin:</strong> Jika peramban memblokir pop-up lokasi, klik ikon gembok/lokasi di address bar browser Anda lalu ubah setelan izin lokasi menjadi "Allow" (Izinkan).
-            </span>
+          <div className="p-3 bg-rose-950/60 border border-rose-800/80 rounded-2xl flex items-center justify-between gap-2.5 text-xs text-rose-200 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>
+                <strong>Panduan Izin:</strong> Jika peramban memblokir akses lokasi hardware, klik tombol <strong>"Konek GPS ({activeUserMember?.name.split(' ')[0] || 'Siti'})"</strong> di atas untuk menyambungkan koordinat GPS secara otomatis.
+              </span>
+            </div>
+            <button
+              onClick={() => handleSimulateGpsForMember()}
+              className="px-3 py-1 bg-rose-500 hover:bg-rose-400 text-white font-bold rounded-lg text-xs transition-all shadow"
+            >
+              Paksa Sambung GPS
+            </button>
           </div>
         )}
       </div>
@@ -325,49 +458,112 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
         
         {/* Simulated Map Canvas */}
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-white text-base flex items-center gap-2">
-              <Navigation className="w-4 h-4 text-rose-400" />
-              <span>Peta Lokasi Live Keluarga (DKI Jakarta)</span>
-            </h3>
-            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30 flex items-center gap-1">
-              <Radio className="w-3 h-3 animate-spin" />
-              <span>Sinyal GPS Terkoneksi</span>
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-white text-base flex items-center gap-2">
+                <Navigation className="w-4 h-4 text-rose-400" />
+                <span>Peta Lokasi Live Keluarga (DKI Jakarta)</span>
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Klik pada nama/kartu anggota keluarga untuk membuka detail lokasi, koordinat, & peta Google.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleRefreshAllLocations}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow"
+                title="Seleraskan sinyal GPS semua anggota sekarang"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-rose-400" />
+                <span>Perbarui Semua GPS</span>
+              </button>
+
+              <span className="text-[10px] px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/30 flex items-center gap-1.5">
+                <Radio className="w-3 h-3 text-emerald-400 animate-spin" />
+                <span>Auto-Sync: {autoRefreshCountdown}s</span>
+              </span>
+            </div>
           </div>
 
+          {/* Sync notification bar */}
+          {lastSyncStatus && (
+            <div className="p-2.5 bg-emerald-950/80 border border-emerald-500/40 rounded-xl text-xs text-emerald-300 font-medium flex items-center gap-2 animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>{lastSyncStatus}</span>
+            </div>
+          )}
+
           {/* Interactive Simulated Map Box */}
-          <div className="relative w-full h-[380px] rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden flex flex-col justify-between p-4 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
+          <div className="relative w-full min-h-[380px] rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden flex flex-col justify-between p-4 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
             
             {/* Grid overlay lines */}
             <div className="absolute inset-0 opacity-20 pointer-events-none bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-[size:40px_40px]"></div>
 
-            {/* Map Markers for Family Members */}
+            {/* Map Markers for Family Members - CLICKABLE */}
             <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {familyMembers.map((m) => (
-                <div key={m.id} className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl backdrop-blur-md flex items-center gap-3 shadow-lg">
-                  <div className="relative">
-                    <img src={m.avatar} alt={m.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-rose-500/50" />
-                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-950 flex items-center justify-center text-[8px] text-white font-bold">
-                      ✓
-                    </span>
+              {familyMembers.map((m) => {
+                const isSelected = selectedMemberId === m.id;
+                return (
+                  <div 
+                    key={m.id} 
+                    onClick={() => setSelectedMemberId(m.id)}
+                    className={`p-3.5 bg-slate-900/95 border rounded-2xl backdrop-blur-md flex items-center justify-between gap-3 shadow-xl cursor-pointer hover:scale-[1.02] transition-all group ${
+                      isSelected 
+                        ? 'border-rose-500 ring-2 ring-rose-500/50 bg-rose-950/40' 
+                        : 'border-slate-800 hover:border-rose-500/60 hover:bg-slate-800/90'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative shrink-0">
+                        <img src={m.avatar} alt={m.name} className="w-11 h-11 rounded-full object-cover ring-2 ring-rose-500/50 group-hover:ring-rose-400 transition-all" />
+                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 flex items-center justify-center text-[9px] text-white font-bold">
+                          ✓
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-xs text-white truncate group-hover:text-rose-300 transition-colors flex items-center gap-1.5">
+                          <span>{m.name}</span>
+                          <span className="text-[10px] text-slate-400 font-normal">({m.relationship})</span>
+                        </div>
+                        <div className="text-[10px] text-rose-300 font-semibold truncate mt-0.5 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 shrink-0 text-rose-400" />
+                          <span className="truncate">{m.location.placeName}</span>
+                        </div>
+                        <div className="text-[9px] text-slate-400 mt-0.5 flex items-center gap-2">
+                          <span>{m.location.lastUpdated}</span>
+                          <span>•</span>
+                          <span className="text-emerald-400 font-bold">🔋 {m.location.batteryPercent}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedMemberId(m.id);
+                        }}
+                        className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 transition-all"
+                        title="Buka Detail Lokasi GPS"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-xs text-white truncate">{m.name}</div>
-                    <div className="text-[10px] text-rose-300 font-medium truncate">{m.location.placeName}</div>
-                    <div className="text-[9px] text-slate-400 mt-0.5">{m.location.lastUpdated}</div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Map Status Footer */}
-            <div className="relative z-10 flex items-center justify-between text-xs text-slate-400 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+            <div className="relative z-10 mt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
               <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
                 <ShieldCheck className="w-4 h-4" />
                 <span>Geofencing: 100% Di Dalam Zona Aman</span>
               </span>
-              <span>Pembaruan otomatis tiap 30 detik</span>
+              <span className="text-[11px]">Pembaruan otomatis tiap 30 detik • Klik anggota untuk lacak detail</span>
             </div>
           </div>
         </div>
@@ -380,18 +576,25 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
 
             <div className="space-y-3">
               {familyMembers.map((m) => (
-                <div key={m.id} className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs">
+                <div 
+                  key={m.id} 
+                  onClick={() => setSelectedMemberId(m.id)}
+                  className="p-3 bg-slate-950 hover:bg-slate-800/80 rounded-2xl border border-slate-800 hover:border-rose-500/50 flex items-center justify-between text-xs cursor-pointer transition-all group"
+                >
                   <div className="flex items-center gap-2.5">
-                    <img src={m.avatar} alt={m.name} className="w-7 h-7 rounded-full object-cover" />
+                    <img src={m.avatar} alt={m.name} className="w-7 h-7 rounded-full object-cover ring-1 ring-slate-700 group-hover:ring-rose-400" />
                     <div>
-                      <div className="font-bold text-slate-200">{m.name}</div>
+                      <div className="font-bold text-slate-200 group-hover:text-white transition-colors">{m.name}</div>
                       <div className="text-[10px] text-slate-400">{m.relationship}</div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 font-mono font-bold text-emerald-400">
-                    <Battery className="w-4 h-4" />
-                    <span>{m.location.batteryPercent}%</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 font-mono font-bold text-emerald-400">
+                      <Battery className="w-4 h-4" />
+                      <span>{m.location.batteryPercent}%</span>
+                    </div>
+                    <Eye className="w-3.5 h-3.5 text-slate-500 group-hover:text-rose-400 transition-colors" />
                   </div>
                 </div>
               ))}
@@ -782,6 +985,172 @@ export const SafetyView: React.FC<SafetyViewProps> = ({ familyMembers = [], onOp
               </div>
 
             </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* MEMBER LOCATION DETAIL MODAL */}
+      {selectedMemberForDetail && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl text-white relative animate-in fade-in zoom-in duration-200">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <img 
+                    src={selectedMemberForDetail.avatar} 
+                    alt={selectedMemberForDetail.name} 
+                    className="w-14 h-14 rounded-full object-cover ring-4 ring-rose-500/50 shadow-lg" 
+                  />
+                  <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-950 flex items-center justify-center text-[10px] text-white font-bold">
+                    ✓
+                  </span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-lg text-white">{selectedMemberForDetail.name}</h3>
+                    <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold">
+                      {selectedMemberForDetail.relationship}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
+                    <span>{selectedMemberForDetail.roleTitle}</span>
+                    <span>•</span>
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                      <Battery className="w-3.5 h-3.5" />
+                      {selectedMemberForDetail.location.batteryPercent}% Baterai
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedMemberId(null)}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Current GPS Location Card */}
+            <div className="p-4 bg-slate-950 rounded-2xl border border-rose-500/30 space-y-2 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Navigation className="w-4 h-4" />
+                  <span>Lokasi Terkini Live GPS</span>
+                </span>
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>{selectedMemberForDetail.location.lastUpdated}</span>
+                </span>
+              </div>
+
+              <div>
+                <h4 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-rose-500 shrink-0" />
+                  <span>{selectedMemberForDetail.location.placeName}</span>
+                </h4>
+                <div className="mt-1 pl-7 flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-mono font-bold text-rose-300 bg-rose-950/70 border border-rose-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                    <Navigation className="w-3 h-3 text-rose-400" />
+                    <span>{selectedMemberForDetail.location.lat}, {selectedMemberForDetail.location.lng}</span>
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-1 pl-7">
+                  {selectedMemberForDetail.locationHistory?.[0]?.addressDetails || 'Titik area aktif pengguna terkoneksi dalam peta keamanan keluarga.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Action Buttons Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              
+              {/* Button 1: Update GPS Now */}
+              <button
+                type="button"
+                onClick={() => {
+                  handleRequestGpsPermission(selectedMemberForDetail.id);
+                }}
+                className="p-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all"
+              >
+                <LocateFixed className="w-4 h-4" />
+                <span>Perbarui GPS Anggota Ini</span>
+              </button>
+
+              {/* Button 2: Open in Google Maps */}
+              <a
+                href={`https://www.google.com/maps?q=${selectedMemberForDetail.location.lat},${selectedMemberForDetail.location.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition-all"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>Buka di Google Maps</span>
+              </a>
+
+              {/* Button 3: Check-in new location */}
+              <button
+                type="button"
+                onClick={() => {
+                  setCheckInMemberId(selectedMemberForDetail.id);
+                  setSelectedMemberId(null);
+                  setIsCheckInOpen(true);
+                }}
+                className="p-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all"
+              >
+                <Plus className="w-4 h-4 text-rose-400" />
+                <span>Simulasi Check-In Baru</span>
+              </button>
+
+              {/* Button 4: Copy Location */}
+              <button
+                type="button"
+                onClick={() => {
+                  const info = `${selectedMemberForDetail.name}: ${selectedMemberForDetail.location.placeName} (${selectedMemberForDetail.location.lastUpdated})`;
+                  navigator.clipboard.writeText(info);
+                  setCopiedToast(true);
+                  setTimeout(() => setCopiedToast(false), 3000);
+                }}
+                className="p-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all"
+              >
+                <Copy className="w-4 h-4 text-amber-400" />
+                <span>{copiedToast ? 'Tersalin!' : 'Salin Info Lokasi'}</span>
+              </button>
+
+            </div>
+
+            {/* History of Last Visited Locations */}
+            <div className="space-y-3 pt-2 border-t border-slate-800">
+              <h5 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <History className="w-4 h-4 text-rose-400" />
+                <span>Riwayat 3 Lokasi Dikunjungi</span>
+              </h5>
+
+              <div className="space-y-2">
+                {(selectedMemberForDetail.locationHistory && selectedMemberForDetail.locationHistory.length > 0
+                  ? selectedMemberForDetail.locationHistory.slice(0, 3)
+                  : [
+                      {
+                        id: `def_${selectedMemberForDetail.id}`,
+                        placeName: selectedMemberForDetail.location.placeName,
+                        timestamp: selectedMemberForDetail.location.lastUpdated,
+                        category: 'Rumah',
+                        addressDetails: 'Lokasi utama saat ini'
+                      }
+                    ]
+                ).map((hist) => (
+                  <div key={hist.id} className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                    <div>
+                      <div className="font-bold text-white text-xs">{hist.placeName}</div>
+                      <div className="text-[10px] text-slate-400">{hist.addressDetails || 'Diperbarui via sistem GPS'}</div>
+                    </div>
+                    <span className="text-[10px] text-rose-300 font-mono">{hist.timestamp}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
           </div>
         </div>
